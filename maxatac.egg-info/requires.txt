@@ -1,0 +1,14 @@
+tensorflow
+tensorboard
+biopython
+py2bit
+pyBigWig
+pydot
+matplotlib
+scikit-learn
+pybedtools
+pandas
+pyfiglet
+pyyaml
+pysam
+seaborn
