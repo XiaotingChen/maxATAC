@@ -11,7 +11,7 @@ import pybedtools
 import os
 import glob
 
-from maxatac.architectures.dcnn import get_dilated_cnn
+from maxatac.architectures.dcnn import get_dilated_cnn, get_dilated_cnn_hparam_optim
 from maxatac.utilities.constants import BP_RESOLUTION, BATCH_SIZE, CHR_POOL_SIZE, INPUT_LENGTH, INPUT_CHANNELS, \
     BP_ORDER, TRAIN_SCALE_SIGNAL
 from maxatac.utilities.genome_tools import load_bigwig, load_2bit, get_one_hot_encoded, build_chrom_sizes_dict
@@ -41,7 +41,9 @@ class MaxATACModel(object):
                  target_scale_factor=TRAIN_SCALE_SIGNAL,
                  output_activation="sigmoid",
                  interpret=False,
-                 interpret_cell_type=""
+                 interpret_cell_type="",
+                 hparam_optim=False,
+                 wandb_config=None
                  ):
         """
         Initialize the maxATAC model with the input parameters and architecture
@@ -71,6 +73,8 @@ class MaxATACModel(object):
         self.dense = dense
         self.weights = weights
         self.target_scale_factor = target_scale_factor
+        self.hparam_optim = hparam_optim
+        self.wandb_config = wandb_config
 
         # Set the random seed for the model
         random.seed(seed)
@@ -99,11 +103,19 @@ class MaxATACModel(object):
     def __get_model(self):
         # Get the neural network model based on the specified model architecture
         if self.arch == "DCNN_V2":
-            return get_dilated_cnn(output_activation=self.output_activation,
-                                   target_scale_factor=self.target_scale_factor,
-                                   dense_b=self.dense,
-                                   weights=self.weights
-                                   )
+            if self.hparam_optim:
+                return get_dilated_cnn_hparam_optim(output_activation=self.output_activation,
+                                       target_scale_factor=self.target_scale_factor,
+                                       dense_b=self.dense,
+                                       weights=self.weights,
+                                       wandb_config=self.wandb_config
+                                       )
+            else:
+                return get_dilated_cnn(output_activation=self.output_activation,
+                                       target_scale_factor=self.target_scale_factor,
+                                       dense_b=self.dense,
+                                       weights=self.weights
+                                       )
         else:
             sys.exit("Model Architecture not specified correctly. Please check")
 

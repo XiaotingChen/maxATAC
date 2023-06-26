@@ -15,6 +15,7 @@ with Mute():
     from maxatac.analyses.average import run_averaging
     from maxatac.analyses.predict import run_prediction
     from maxatac.analyses.train import run_training
+    from maxatac.analyses.hparam_optim import run_hparam_optim
     from maxatac.analyses.normalize import run_normalization
     from maxatac.analyses.benchmark import run_benchmarking
     from maxatac.analyses.peaks import run_call_peaks
@@ -563,6 +564,278 @@ def get_parser():
                               )
 
     #############################################
+    # Hparam optim parser
+    #############################################
+    # Add a subparser for the hparam optim
+    hparam_optim_parser = subparsers.add_parser("hparam_optim",
+                                         parents=[parent_parser],
+                                         help="Hyperparameter optimization."
+                                         )
+    hparam_optim_parser.set_defaults(func=run_hparam_optim)
+
+    # Add arguments to the parser
+    hparam_optim_parser.add_argument("--genome",
+                              dest="genome",
+                              type=str,
+                              default="hg38",
+                              required=False,
+                              help="The reference genome build to use."
+                              )
+
+    hparam_optim_parser.add_argument("--sequence",
+                              dest="sequence",
+                              type=str,
+                              help="Genome sequence 2bit file"
+                              )
+
+    hparam_optim_parser.add_argument("--meta_file",
+                              dest="meta_file",
+                              type=str,
+                              required=True,
+                              help="Meta file containing ATAC Signal and peak path for all cell lines (.tsv format)"
+                              )
+
+    hparam_optim_parser.add_argument("--train_roi",
+                              dest="train_roi",
+                              type=str,
+                              required=False,
+                              help="Optional BED format file that will be used as the training regions of interest "
+                                   "instead of using the peak files to build training regions"
+                              )
+
+    hparam_optim_parser.add_argument("--validate_roi",
+                              dest="validate_roi",
+                              type=str,
+                              required=False,
+                              help="Optional BED format file that will be used as the validation regions of interest "
+                                   "instead of using the peak files to build validation regions"
+                              )
+
+    hparam_optim_parser.add_argument("--output_activation",
+                              dest="output_activation",
+                              type=str,
+                              required=False,
+                              default="sigmoid",
+                              help="Activation function used for model output layer. Default: sigmoid"
+                              )
+
+    hparam_optim_parser.add_argument("--chroms",
+                              dest="chroms",
+                              type=str,
+                              nargs="+",
+                              required=False,
+                              default=DEFAULT_TRAIN_VALIDATE_CHRS,
+                              help="Chromosome list to use for training and validation."
+                              )
+
+    hparam_optim_parser.add_argument("--tchroms",
+                              dest="tchroms",
+                              type=str,
+                              nargs="+",
+                              required=False,
+                              default=DEFAULT_TRAIN_CHRS,
+                              help="Chromosome list to use for training."
+                              )
+
+    hparam_optim_parser.add_argument("--vchroms",
+                              dest="vchroms",
+                              type=str,
+                              nargs="+",
+                              required=False,
+                              default=DEFAULT_VALIDATE_CHRS,
+                              help="Chromosome list to use for validation"
+                              )
+
+    hparam_optim_parser.add_argument("--arch",
+                              dest="arch",
+                              type=str,
+                              required=False,
+                              default="DCNN_V2",
+                              help="Specify the model architecture. Currently support DCNN_V2, RES_DCNN_V2, "
+                                   "MM_DCNN_V2 and MM_Res_DCNN_V2 "
+                              )
+
+    hparam_optim_parser.add_argument("--rand_ratio",
+                              dest="rand_ratio",
+                              type=float,
+                              required=False,
+                              default=0,
+                              help="Ratio for controlling fraction of random sequences in each training batch. "
+                                   "Default: 0 "
+                              )
+
+    hparam_optim_parser.add_argument("--seed",
+                              dest="seed",
+                              type=int,
+                              # default=random.randint(1, 99999),
+                              help="Seed for pseudo-random generanor. Default: random int [1, 99999]",
+                              required=True,
+                              )
+
+    hparam_optim_parser.add_argument("--weights",
+                              dest="weights",
+                              type=str,
+                              help="Weights to initialize model before training. Default: do not load"
+                              )
+
+    hparam_optim_parser.add_argument("--epochs",
+                              dest="epochs",
+                              type=int,
+                              default=DEFAULT_TRAIN_EPOCHS,
+                              help="Number of training epochs. Default: " + str(DEFAULT_TRAIN_EPOCHS)
+                              )
+
+    hparam_optim_parser.add_argument("--batches",
+                              dest="batches",
+                              type=int,
+                              default=DEFAULT_TRAIN_BATCHES_PER_EPOCH,
+                              help="Number of training batches per epoch. Default: " + str(
+                                  DEFAULT_TRAIN_BATCHES_PER_EPOCH)
+                              )
+
+    hparam_optim_parser.add_argument("--batch_size",
+                              dest="batch_size",
+                              type=int,
+                              default=BATCH_SIZE,
+                              help="Number of examples per batch. Default: " + str(BATCH_SIZE)
+                              )
+
+    hparam_optim_parser.add_argument("--val_batch_size",
+                              dest="val_batch_size",
+                              type=int,
+                              default=VAL_BATCH_SIZE,
+                              help="Number of examples per batch. Default: " + str(VAL_BATCH_SIZE)
+                              )
+
+    hparam_optim_parser.add_argument("--prefix",
+                              dest="prefix",
+                              type=str,
+                              default="maxatac_model",
+                              help="Output prefix. Default: weights"
+                              )
+
+    hparam_optim_parser.add_argument("--output",
+                              dest="output",
+                              type=str,
+                              default="./training_results",
+                              help="Folder for training results. Default: ./training_results"
+                              )
+
+    hparam_optim_parser.add_argument("--plot",
+                              dest="plot",
+                              action="store_true",
+                              default=True,
+                              help="Plot model structure and training history. Default: True"
+                              )
+
+    hparam_optim_parser.add_argument("--dense",
+                              dest="dense",
+                              action="store_true",
+                              default=False,
+                              help="If True, then make a dense layer before model output. Default: False"
+                              )
+
+    hparam_optim_parser.add_argument("--threads",
+                              dest="threads",
+                              type=int,
+                              default=get_cpu_count(),
+                              help="Number of processes to run training in parallel. Default: 1"
+                              )
+
+    hparam_optim_parser.add_argument("--loglevel",
+                              dest="loglevel",
+                              type=str,
+                              default="info",
+                              choices=LOG_LEVELS.keys(),
+                              help="Logging level. Default: " + DEFAULT_LOG_LEVEL
+                              )
+
+    hparam_optim_parser.add_argument("--shuffle_cell_type",
+                              dest="shuffle_cell_type",
+                              action="store_true",
+                              default=True,
+                              help="If shuffle_cell_type, then shuffle training ROI cell type label"
+                              )
+
+    hparam_optim_parser.add_argument("--rev_comp",
+                              dest="rev_comp",
+                              action="store_true",
+                              default=False,
+                              help="If rev_comp, then use the reverse complement in training"
+                              )
+
+    hparam_optim_parser.add_argument("--multiprocessing",
+                              dest="multiprocessing",
+                              action="store_true",
+                              default=False,
+                              help="If multiprocessing, then use multiprocessing with tf.keras.fit()"
+                              )
+
+    hparam_optim_parser.add_argument("--max_queue_size",
+                              dest="max_queue_size",
+                              help="The max number of workers to spin up. These workers will load data and wait for fit."
+                              )
+
+    hparam_optim_parser.add_argument("--save_roi",
+                              dest="save_roi",
+                              action="store_true",
+                              default=False,
+                              help="Saves ROI file and stats generated for training"
+                              )
+
+    hparam_optim_parser.add_argument("--blacklist",
+                              dest="blacklist",
+                              type=str,
+                              help="Blacklist regions to exclude in BED format"
+                              )
+
+    hparam_optim_parser.add_argument("--chrom_sizes",
+                              dest="chrom_sizes",
+                              type=str,
+                              help="Chromosome sizes file"
+                              )
+
+    hparam_optim_parser.add_argument("--wandb_count",
+                              dest="wandb_count",
+                              type=int,
+                              default=10,
+                              help="Number of hyperparameter search trials. Default: 10."
+                              )
+    hparam_optim_parser.add_argument("--wandb_name",
+                              dest="wandb_name",
+                              type=str,
+                              default="",
+                              help="Name of hparam sweep runs."
+                              )
+
+    hparam_optim_parser.add_argument("--wandb_proj_name",
+                             dest="wandb_proj_name",
+                             type=str,
+                             default="maxATAC_hparam_BO",
+                             help="Name of hparam sweep project."
+                             )
+
+    hparam_optim_parser.add_argument("--wandb_group_name",
+                             dest="wandb_group_name",
+                             type=str,
+                             default="",
+                             help="Name of hparam sweep group."
+                             )
+
+    hparam_optim_parser.add_argument("--wandb_epoch_min",
+                              dest="wandb_epoch_min",
+                              type=int,
+                              default=1,
+                              help="Minimum number of epoch to run hparam search. Default: 1."
+                              )
+
+    hparam_optim_parser.add_argument("--wandb_epoch_max",
+                              dest="wandb_epoch_max",
+                              type=int,
+                              default=2,
+                              help="Maximum number of epoch to run hparam search. Default: 1."
+                              )
+    #############################################
     # Normalize parser
     #############################################
     # Add a subparser for the normalize function
@@ -758,12 +1031,13 @@ def get_parser():
                                   )
 
     benchmark_parser.add_argument("-skip_plot", "--skip_plot",
-                                dest="skip_plot",
-                                action="store_true",
-                                default=False,
-                                required=False,
-                                help="Skip PR curve plotting"
-                                )
+                                  dest="skip_plot",
+                                  action="store_true",
+                                  default=False,
+                                  required=False,
+                                  help="Skip PR curve plotting"
+                                  )
+
     #############################################
     # Peaks subparser
     #############################################

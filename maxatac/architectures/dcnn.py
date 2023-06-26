@@ -22,7 +22,8 @@ with Mute():
     from maxatac.utilities.constants import KERNEL_INITIALIZER, INPUT_LENGTH, INPUT_CHANNELS, INPUT_FILTERS, \
         INPUT_KERNEL_SIZE, INPUT_ACTIVATION, OUTPUT_FILTERS, OUTPUT_KERNEL_SIZE, FILTERS_SCALING_FACTOR, DILATION_RATE, \
         OUTPUT_LENGTH, CONV_BLOCKS, PADDING, POOL_SIZE, ADAM_BETA_1, ADAM_BETA_2, DEFAULT_ADAM_LEARNING_RATE, \
-        DEFAULT_ADAM_DECAY
+        DEFAULT_ADAM_DECAY, BATCH_SIZE,DEFAULT_TRAIN_EPOCHS
+
 
 
 def loss_function(
@@ -286,7 +287,7 @@ def get_dilated_cnn(
             lr=adam_learning_rate,
             beta_1=adam_beta_1,
             beta_2=adam_beta_2,
-            decay=adam_decay
+            weight_decay=adam_decay
         ),
         loss=loss_function,
         metrics=[dice_coef]
@@ -300,3 +301,117 @@ def get_dilated_cnn(
 
     return model
 
+def get_dilated_cnn_hparam_optim(
+        output_activation,
+        adam_learning_rate=DEFAULT_ADAM_LEARNING_RATE,
+        adam_decay=DEFAULT_ADAM_DECAY,
+        input_length=INPUT_LENGTH,  # fixed number
+        input_channels=INPUT_CHANNELS,  # fixed number for now
+        input_filters=INPUT_FILTERS,
+        input_kernel_size=INPUT_KERNEL_SIZE,
+        input_activation=INPUT_ACTIVATION,
+        output_filters=OUTPUT_FILTERS,  # fixed number
+        output_kernel_size=OUTPUT_KERNEL_SIZE,  # fixed number
+        filters_scaling_factor=FILTERS_SCALING_FACTOR,
+        dilation_rate=DILATION_RATE,  # fixed dilation rate w.r.t conv #
+        output_length=OUTPUT_LENGTH,  # fixed length of 32
+        conv_blocks=CONV_BLOCKS,  # fixed
+        padding=PADDING,  # fixed
+        pool_size=POOL_SIZE,  # fixed
+        adam_beta_1=ADAM_BETA_1,
+        adam_beta_2=ADAM_BETA_2,
+        target_scale_factor=1,
+        dense_b=False,
+        weights=None,
+        wandb_config=None,
+):
+    """
+    If weights are provided they will be loaded into created model
+    """
+    logging.debug("Building Dilated CNN model")
+
+    # Inputs
+    input_layer = Input(shape=(input_length, input_channels))
+
+    # Temporary variables
+    layer = input_layer  # redefined in encoder/decoder loops
+    filters = wandb_config.input_filters  # redefined in encoder/decoder loops
+
+    # logging.debug("Added inputs layer: " + "\n - " + str(layer))
+
+    # Encoder
+    all_layers = []
+    for i in range(conv_blocks - 1):  # [0, 1, 2, 3, 4, 5]
+        layer_dilation_rate = dilation_rate[i]
+        layer = get_layer(
+            inbound_layer=layer,  # input_layer is used wo MaxPooling1D
+            filters=filters,
+            kernel_size=wandb_config.input_kernel_size,
+            activation=wandb_config.input_activation,
+            padding=padding,
+            dilation_rate=layer_dilation_rate,
+            kernel_initializer=KERNEL_INITIALIZER
+        )
+        # logging.debug("Added convolution layer: " + str(i) + "\n - " + str(layer))
+        # encoder_layers.append(layer)  # save all layers wo MaxPooling1D
+        if i < conv_blocks - 1:  # need to update all except the last layers
+            filters = round(filters * wandb_config.filters_scaling_factor)
+            layer = MaxPooling1D(pool_size=pool_size, strides=pool_size)(layer)
+        all_layers.append(layer)
+
+    # Outputs
+    layer_dilation_rate = dilation_rate[-1]
+    if dense_b:
+        output_layer = get_layer(
+            inbound_layer=layer,
+            filters=output_filters,
+            kernel_size=output_kernel_size,
+            activation=wandb_config.input_activation,
+            padding=padding,
+            dilation_rate=layer_dilation_rate,
+            kernel_initializer=KERNEL_INITIALIZER,
+            skip_batch_norm=True,
+            n=1
+        )
+    else:
+        output_layer = get_layer(
+            inbound_layer=layer,
+            filters=output_filters,
+            kernel_size=output_kernel_size,
+            activation=output_activation,
+            padding=padding,
+            dilation_rate=layer_dilation_rate,
+            kernel_initializer=KERNEL_INITIALIZER,
+            skip_batch_norm=True,
+            n=1
+        )
+
+    # Depending on the output activation functions, model outputs need to be scaled appropriately
+    output_layer = Flatten()(output_layer)
+    if dense_b:
+        output_layer = Dense(output_length, activation=output_activation, kernel_initializer='glorot_uniform')(
+            output_layer)
+
+    logging.debug("Added outputs layer: " + "\n - " + str(output_layer))
+
+    # Model
+    model = Model(inputs=[input_layer], outputs=[output_layer])
+
+    model.compile(
+        optimizer=Adam(
+            lr=wandb_config.adam_learning_rate,
+            beta_1=wandb_config.adam_beta_1,
+            beta_2=wandb_config.adam_beta_2,
+            weight_decay=wandb_config.adam_decay
+        ),
+        loss=loss_function,
+        metrics=[dice_coef]
+    )
+
+    logging.debug("Model compiled")
+
+    if weights is not None:
+        model.load_weights(weights)
+        logging.debug("Weights loaded")
+
+    return model
