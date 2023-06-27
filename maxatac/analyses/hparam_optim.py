@@ -15,7 +15,9 @@ with Mute():
 from maxatac.utilities.constants import KERNEL_INITIALIZER, INPUT_LENGTH, INPUT_CHANNELS, INPUT_FILTERS, \
     INPUT_KERNEL_SIZE, INPUT_ACTIVATION, OUTPUT_FILTERS, OUTPUT_KERNEL_SIZE, FILTERS_SCALING_FACTOR, DILATION_RATE, \
     OUTPUT_LENGTH, CONV_BLOCKS, PADDING, POOL_SIZE, ADAM_BETA_1, ADAM_BETA_2, DEFAULT_ADAM_LEARNING_RATE, \
-    DEFAULT_ADAM_DECAY, BATCH_SIZE, DEFAULT_TRAIN_EPOCHS
+    DEFAULT_ADAM_DECAY, BATCH_SIZE, DEFAULT_TRAIN_EPOCHS, DEFAULT_LEARNING_RATE,DEFAULT_EXPONENTIALDECAY_DECAY_RATE, \
+    DEFAULT_EXPONENTIALDECAY_DECAY_STEPS, DEFAULT_COSINEDECAYRESTART_FIRST_DECAY_STEPS,DEFAULT_COSINEDECAYRESTART_ALPHA, \
+    DEFAULT_COSINEDECAYRESTART_T_MUL, DEFAULT_COSINEDECAYRESTART_M_MUL
 
 import wandb
 from wandb.keras import WandbMetricsLogger
@@ -97,9 +99,15 @@ def run_hparam_optim(args):
                 "max": args.wandb_epoch_max,
                 "min": args.wandb_epoch_min,
             },
-            "adam_learning_rate": {
-                "values": [1e-2, 1e-3, 1e-4],
-            }
+            "default_learning_rate": {
+                "values": [5e-3, 1e-3, 1e-4],
+            },
+            "optimizer": {
+                "values": ['adam', 'sgd', 'adamw'],
+            },
+            "lr_schedule": {
+                "values": ['None', 'exponential_decay', 'cosine_decay_restarts'],
+            },
         },
         'run_cap': args.wandb_count,
     }
@@ -130,6 +138,15 @@ def run_hparam_optim(args):
                 'adam_beta_2': ADAM_BETA_2,
                 'batch_size': BATCH_SIZE,
                 'epoch': DEFAULT_TRAIN_EPOCHS,
+                'optimizer': 'adam',
+                'lr_schedule': 'None',
+                'default_learning_rate': DEFAULT_LEARNING_RATE,
+                'exponential_decay_decay_rate': DEFAULT_EXPONENTIALDECAY_DECAY_RATE,
+                'exponential_decay_decay_steps': DEFAULT_EXPONENTIALDECAY_DECAY_STEPS,
+                'cosine_decay_restart_first_decay_steps': DEFAULT_COSINEDECAYRESTART_FIRST_DECAY_STEPS,
+                'cosine_decay_restart_alpha': DEFAULT_COSINEDECAYRESTART_ALPHA,
+                'cosine_decay_restart_t_mul': DEFAULT_COSINEDECAYRESTART_T_MUL,
+                'cosine_decay_restart_m_mul': DEFAULT_COSINEDECAYRESTART_M_MUL,
             }
         )
 

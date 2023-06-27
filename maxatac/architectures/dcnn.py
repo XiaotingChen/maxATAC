@@ -397,13 +397,50 @@ def get_dilated_cnn_hparam_optim(
     # Model
     model = Model(inputs=[input_layer], outputs=[output_layer])
 
-    model.compile(
+    # lr schedule
+    if wandb_config.lr_schedule=="None":
+        lr_schedule=wandb_config.default_learning_rate
+    elif wandb_config.lr_schedule=="exponential_decay":
+        lr_schedule=tf.keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=wandb_config.default_learning_rate,
+            decay_steps=wandb_config.exponential_decay_decay_steps,
+            decay_rate=wandb_config.exponential_decay_decay_rate,
+        )
+    elif wandb_config.lr_schedule=="cosine_decay_restarts":
+        lr_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
+            initial_learning_rate=wandb_config.default_learning_rate,
+            first_decay_steps=wandb_config.cosine_decay_restart_first_decay_steps,
+            t_mul=wandb_config.cosine_decay_restart_t_mul,
+            m_mul=wandb_config.cosine_decay_restart_m_mul,
+            alpha=wandb_config.cosine_decay_restart_alpha,
+        )
+    else:
+        raise NotImplementedError("Learning rate schedule: {} is not supported, please change wandb sweep config/init and/or dcnn.py file!".
+                      format(wandb_config.lr_schedule)
+                      )
+
+    # optimizer
+    if wandb_config.optimizer=='adam':
         optimizer=Adam(
-            lr=wandb_config.adam_learning_rate,
+            learning_rate=lr_schedule,
             beta_1=wandb_config.adam_beta_1,
             beta_2=wandb_config.adam_beta_2,
             weight_decay=wandb_config.adam_decay
-        ),
+        )
+    elif wandb_config.optimizer=='sgd':
+        optimizer=tf.keras.optimizers.SGD(learning_rate=lr_schedule)
+    elif wandb_config.optimizer=='adamw':
+        try:
+            optimizer=tf.keras.optimizers.AdamW(learning_rate=lr_schedule)
+        except:
+            optimizer = tf.keras.optimizers.experimental.AdamW(learning_rate=lr_schedule)
+    else:
+        raise NotImplementedError("Optimizer: {} is not supported, please change wandb sweep config/init and/or dcnn.py file!".
+                      format(wandb_config.optimizer)
+                      )
+
+    model.compile(
+        optimizer=optimizer,
         loss=loss_function,
         metrics=[dice_coef]
     )
