@@ -149,3 +149,4 @@ If rev_comp_train, then use the reverse complement sequence in addition to the r
 ### `--shuffle_cell_type`
 
 If shuffle_cell_type, then shuffle training ROI cell type label. This is related to "pan-cell" training as described in the maxATAC manuscript. Default: `True`
+
