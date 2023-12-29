@@ -19,7 +19,7 @@ def get_cpu_count(reserved=0.25):  # reserved is [0, 1)
     return 1 if avail_cpus == 0 else avail_cpus
 
 
-def get_dir(dir: str, permissions=0o0775, exist_ok : bool=True):
+def get_dir(dir: str, permissions=0o0775, exist_ok: bool = True):
     """Makes a directory at the given location
 
     Args:
@@ -29,9 +29,9 @@ def get_dir(dir: str, permissions=0o0775, exist_ok : bool=True):
 
     Returns:
         str: Absolute path to the created directory
-        
+
     Example:
-    
+
     >>> output_dir = get_dir("./output/")
     """
     abs_dir = get_absolute_path(dir)
@@ -123,14 +123,20 @@ class Mute():
 
 
 def check_data_packages_installed():
-    """Check that packages are installed
-    This module requires 
+    """
+    Check whether the pakages required by maxatac data are installed before running.
+
+    Returns: None
+
+    Examples:
+
+    >>> check_data_packages_installed()
     """
     try:
         subprocess.run(["which", "git"], stdout=subprocess.DEVNULL, check=True)
     except subprocess.CalledProcessError as e:
         raise_exception(e, "git", "conda install git")
-        
+
     try:
         subprocess.run(["which", "wget"], stdout=subprocess.DEVNULL, check=True)
     except subprocess.CalledProcessError as e:
@@ -143,23 +149,82 @@ def raise_exception(e, package, install_link):
 
 
 def check_prepare_packages_installed():
+    """
+    Check whether the pakages required by the prepare function are installed before running.
+
+    Returns: None
+
+    Examples:
+
+    >>> check_prepare_packages_installed()
+    """
     try:
         subprocess.run(["which", "samtools"], stdout=subprocess.DEVNULL, check=True)
     except subprocess.CalledProcessError as e:
         raise_exception(e, "samtools", "http://www.htslib.org/")
-        
+
     try:
         subprocess.run(["which", "bedtools"], stdout=subprocess.DEVNULL, check=True)
     except subprocess.CalledProcessError as e:
         raise_exception(e, "bedtools", "https://bedtools.readthedocs.io/")
-        
+
     try:
         subprocess.run(["which", "pigz"], stdout=subprocess.DEVNULL, check=True)
     except subprocess.CalledProcessError as e:
         raise_exception(e, "pigz", "https://zlib.net/pigz/")
-        
+
     try:
         subprocess.run(["which", "bedGraphToBigWig"], stdout=subprocess.DEVNULL, check=True)
     except subprocess.CalledProcessError as e:
         raise_exception(e, "bedGraphToBigWig", "https://anaconda.org/bioconda/ucsc-bedgraphtobigwig")
-        
+
+
+class Namespace:
+    """
+    Create a namespoce object.
+    https://stackoverflow.com/questions/28345780/how-do-i-create-a-python-namespace-argparse-parse-args-value
+
+    >>> args = Namespace(a=1, b='c')
+    >>> args.a
+    1
+    >>> args.b
+    'c'
+    """
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+
+def update_reference_genome_paths(args):
+    """
+    Build path names based on the input reference genome. This function will take an input args Namespace object
+    and create a path names based on the input reference genome.
+
+    Args: args Namespace object containing the arguments from the parser
+
+    Returns:    an augmented args parser
+
+    """
+    logging.info(f"Generating Paths for genome build: {args.genome} \n")
+
+    # build maxatac data path
+    maxatac_data_path = os.path.join(os.path.expanduser('~'), "opt", "maxatac", "data")
+
+    # build genome specific paths
+    blacklist_path = os.path.join(maxatac_data_path,
+                                  f"{args.genome}/{args.genome}_maxatac_blacklist.bed")  # maxATAC extended blacklist as bed
+
+    blacklist_bigwig_path = os.path.join(maxatac_data_path,
+                                         f"{args.genome}/{args.genome}_maxatac_blacklist.bw")  # maxATAC extended blacklist as bigwig
+
+    chrom_sizes_path = os.path.join(maxatac_data_path, f"{args.genome}/{args.genome}.chrom.sizes")  # chrom sizes file
+
+    sequence_path = os.path.join(maxatac_data_path, f"{args.genome}/{args.genome}.2bit")  # sequence 2bit
+
+    # normalize paths
+    args.blacklist = blacklist_path
+    args.blacklist_bw = blacklist_bigwig_path
+    args.chrom_sizes = chrom_sizes_path
+    args.sequence = sequence_path
+    args.DATA_PATH = maxatac_data_path
+
+    return args

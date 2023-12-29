@@ -11,8 +11,9 @@ from maxatac.utilities.system_tools import Mute
 with Mute():
     from tensorflow.keras.models import load_model
     from maxatac.utilities.genome_tools import load_bigwig, load_2bit, dump_bigwig
-    from maxatac.utilities.training_tools import get_input_matrix
- 
+    from maxatac.utilities.training_tools import get_input_matrix, MaxATACModel
+
+
 def sortChroms(chrom):
     """Sort a list of chromosomes based on a specific order
 
@@ -23,14 +24,15 @@ def sortChroms(chrom):
         int: Position in list based on predefined order
     """
     order = dict(zip(ALL_CHRS, range(0, len(ALL_CHRS))))
-    return order[chrom] 
+    return order[chrom]
+
 
 def write_predictions_to_bigwig(df: pd.DataFrame,
                                 output_filename: str,
                                 chrom_sizes_dictionary: dict,
                                 chromosomes: list,
                                 agg_mean: bool = True
-                                ) -> object:
+                                ):
     """Write the predictions dataframe into a bigwig file
 
     Args:
@@ -41,10 +43,10 @@ def write_predictions_to_bigwig(df: pd.DataFrame,
         agg_mean (bool, optional): use aggregation method of mean. Defaults to True.
 
     Returns:
-        object: Writes a bigwig file
-        
+        Writes a bigwig file
+
     Example:
-    
+
     >>> write_predictions_to_bigwig(preds_df, "GM12878_CTCF.bw", chrom_sizes_dict, "chr20")
     """
     if agg_mean:
@@ -55,7 +57,7 @@ def write_predictions_to_bigwig(df: pd.DataFrame,
                                  as_index=False).max()
 
     chromosomes.sort(key=sortChroms)
-    
+
     with dump_bigwig(output_filename) as data_stream:
         # Make the bigwig header using the chrom sizes dictionary
         header = [(x, chrom_sizes_dictionary[x]) for x in chromosomes]
@@ -69,7 +71,7 @@ def write_predictions_to_bigwig(df: pd.DataFrame,
 
             # Bigwig files need sorted intervals as input
             tmp_chrom_df = tmp_chrom_df.sort_values(by=["chr", "start"])
-            
+
             # Write all entries for the chromosome
             data_stream.addEntries(chroms=tmp_chrom_df["chr"].tolist(),
                                    starts=tmp_chrom_df["start"].tolist(),
@@ -95,9 +97,9 @@ def import_prediction_regions(bed_file: str,
 
     Returns:
         pd.DataFrame: A BED formatted dataframe of maxATAC compatible intevals
-    
+
     Example:
-    
+
     >>> roi_df = import_prediction_regions("test.bed", 1024, ["chr1"], chrom_sizes_dict, "hg38.blacklist.bed")
     """
     df = pd.read_csv(bed_file,
@@ -109,7 +111,7 @@ def import_prediction_regions(bed_file: str,
 
     # Filter for chroms in the desired set
     df = df[df["chr"].isin(chromosomes)]
-    
+
     # Create a bedtool object from dataframe for merging
     df_bedtool = pybedtools.BedTool.from_dataframe(df)
 
@@ -117,8 +119,8 @@ def import_prediction_regions(bed_file: str,
     sorted_bedtool = df_bedtool.sort()
 
     # Merge the bedtool object if they are half the region length away or less
-    merged_bedtool = sorted_bedtool.merge(d=int(region_length/2))
-    
+    merged_bedtool = sorted_bedtool.merge(d=int(region_length / 2))
+
     # Create a blacklist object form the blacklist bed file
     blacklist_bedtool = pybedtools.BedTool(blacklist)
 
@@ -140,7 +142,7 @@ def import_prediction_regions(bed_file: str,
 
     return df[["chr", "start", "stop"]]
 
-    
+
 def create_prediction_regions(chromosomes: list,
                               chrom_sizes: dict,
                               blacklist: str,
@@ -157,33 +159,57 @@ def create_prediction_regions(chromosomes: list,
 
     Returns:
         pd.DataFrame : A dataframe of regions that are compatible with the model for making predictions
-    
+
     Example:
-    
+
     >>> roi_df = create_prediction_regions(["chr1"], "hg38.chrom.sizes", "hg38.blacklist.bed")
     """
-    # Create a temp chrom.sizes file for the chromosomes of interest only
+    if windows:
+        logging.info(f"Importing user defined prediction windows from {windows}")
+        logging.warning(f"Make sure that the custom windows are {region_length} bp wide and have the same step size.")
+        windows_bedtool = pybedtools.BedTool(windows)
 
-    
+    else:
+        logging.info(f"Creating prediction windows that are {region_length} bp wide with a {step_size} bp step")
     # Create a bedtools object that is a windowed genome
-    BED_df_bedtool = pybedtools.BedTool().window_maker(g=chrom_sizes, w=region_length, s=step_size)
+        windows_bedtool = pybedtools.BedTool().window_maker(g=chrom_sizes,
+                                                            w=region_length,
+                                                            s=step_size)
 
     # Create a blacklist object form the blacklist bed
+    logging.debug(f"Import blacklist file {blacklist} as BedTool")
     blacklist_bedtool = pybedtools.BedTool(blacklist)
 
     # Remove the blacklisted regions from the windowed genome object
-    blacklisted_df = BED_df_bedtool.intersect(blacklist_bedtool, v=True)
+    logging.debug(f"Removing windows that overlap blacklist regions.")
+    blacklisted_windows = windows_bedtool.intersect(blacklist_bedtool, v=True)
+
+    final_windows = blacklisted_windows
+
+    if peaks:
+        logging.info(f"Limiting prediction windows to regions overlapping intervals in peaks file: {peaks}")
+        logging.debug(f"Create BedTool from file: {peaks}")
+        peaks_bt = pybedtools.BedTool(peaks)
+
+        logging.debug(f"Intersect windows with peaks.")
+        peak_windows = blacklisted_windows.intersect(peaks_bt, u=True)
+
+        final_windows = peak_windows
 
     # Create a dataframe from the BedTools object
-    df = blacklisted_df.to_dataframe()
+    logging.debug(f"Convert BedTool of final prediction windows to pandas DataFrame.")
+    df = final_windows.to_dataframe()
 
-    # Rename the columns
+    # Rename the column
+    logging.debug(f"Rename columns.")
     df.columns = ["chr", "start", "stop"]
 
     # Filter for specific chroms
+    logging.debug(f"Filter for chromosomes in {chromosomes}")
     df = df[df["chr"].isin(chromosomes)]
 
     # Reset index so that it goes from 0-end in order
+    logging.debug(f"Reset index.")
     df = df.reset_index(drop=True)
 
     return df
@@ -197,7 +223,8 @@ class PredictionDataGenerator(tf.keras.utils.Sequence):
                  input_channels: int = INPUT_CHANNELS,
                  input_length: int = INPUT_LENGTH,
                  batch_size=32,
-                 use_complement=False
+                 use_complement=False,
+                 inter_fusion=False
                  ):
         """
         Initialize the training generator. This is a keras sequence class object. It is used
@@ -219,6 +246,7 @@ class PredictionDataGenerator(tf.keras.utils.Sequence):
         self.input_channels = input_channels
         self.input_length = input_length
         self.use_complement = use_complement
+        self.inter_fusion = inter_fusion
 
         self.predict_roi_df.reset_index(inplace=True, drop=True)
 
@@ -227,13 +255,13 @@ class PredictionDataGenerator(tf.keras.utils.Sequence):
         Denotes the number of batches per epoch
         """
         if self.predict_roi_df.shape[0] < self.batch_size:
-            num_batches = 1  
-            
+            num_batches = 1
+
         else:
             num_batches = int(self.predict_roi_df.shape[0] / self.batch_size)
-        
+
         return num_batches
-    
+
     def __getitem__(self, index):
         """
         Generate one batch of data
@@ -243,10 +271,15 @@ class PredictionDataGenerator(tf.keras.utils.Sequence):
         # Generate indexes of the batch
         batch_indexes = self.indexes[index * self.batch_size:(index + 1) * self.batch_size]
 
-        # Generate data
+        # Generate data (X has shape (batch, seq_len, dim))
         X = self.__data_generation__(batch_indexes)
 
-        return X
+        if not self.inter_fusion:
+            return X
+        else:
+            genome = X[..., :4]
+            atac = np.expand_dims(X[..., 4], axis=-1)
+            return {"genome": genome, "atac": atac}
 
     def __data_generation__(self, batch_indexes):
         """
@@ -268,7 +301,7 @@ class PredictionDataGenerator(tf.keras.utils.Sequence):
         Get the bigwig values for each ROI in the ROI pool
 
         :param roi_pool: Pool of regions to make predictions on
-        """        
+        """
         # Create the lists to hold the batch data
         inputs_batch = []
 
@@ -296,41 +329,170 @@ class PredictionDataGenerator(tf.keras.utils.Sequence):
         return np.array(inputs_batch)
 
 
-def make_stranded_predictions(roi_pool: pd.DataFrame,
+class PredictionDataGenerator_tfds(tf.keras.utils.Sequence):
+    def __init__(self,
+                 signal,
+                 sequence,
+                 predict_roi_df,
+                 input_channels: int = INPUT_CHANNELS,
+                 input_length: int = INPUT_LENGTH,
+                 batch_size=32,
+                 use_complement=False,
+                 inter_fusion=False
+                 ):
+        """
+        Initialize the training generator. This is a keras sequence class object. It is used
+        to make sure each batch is unique and sequentially generated.
+
+        :param signal: ATAC-seq signal track
+        :param sequence: 2Bit DNA sequence track
+        :param input_channels: How many channels there are
+        :param input_length: length of receptive field
+        :param predict_roi_df: Dataframe that contains the BED intervals to predict on
+        :param batch_size: Size of each training batch or # of examples per batch
+        :param use_complement: Whether to use the forward or reverse (complement) strand
+        """
+        self.batch_size = batch_size
+        self.predict_roi_df = predict_roi_df
+        self.indexes = np.arange(self.predict_roi_df.shape[0])
+        self.signal = signal
+        self.sequence = sequence
+        self.input_channels = input_channels
+        self.input_length = input_length
+        self.use_complement = use_complement
+        self.inter_fusion = inter_fusion
+
+        self.predict_roi_df.reset_index(inplace=True, drop=True)
+
+    def __len__(self):
+        """
+        Denotes the number of batches per epoch
+        """
+        if self.predict_roi_df.shape[0] < self.batch_size:
+            num_batches = 1
+
+        else:
+            num_batches = int(self.predict_roi_df.shape[0] / self.batch_size)
+
+        return num_batches
+
+    def __getitem__(self, index):
+        """
+        Generate one batch of data
+
+        :param index: current index of batch that we are on
+        """
+        # Generate indexes of the batch
+        batch_indexes = self.indexes[index * self.batch_size:(index + 1) * self.batch_size]
+
+        # Generate data (X has shape (batch, seq_len, dim))
+        X = self.__data_generation__(batch_indexes)
+
+        return X
+
+    def __data_generation__(self, batch_indexes):
+        """
+        Generates data containing batch_size samples
+
+        :param batch_indexes: list of indexes of to use for batch
+        """
+        # Store sample
+        batch_roi_df = self.predict_roi_df.loc[batch_indexes, :]
+
+        batch_roi_df.reset_index(drop=True, inplace=True)
+
+        batch = self.__get_region_values__(roi_pool=batch_roi_df)
+
+        return batch
+
+    def __get_region_values__(self, roi_pool):
+        """
+        Get the bigwig values for each ROI in the ROI pool
+
+        :param roi_pool: Pool of regions to make predictions on
+        """
+        # Create the lists to hold the batch data
+        inputs_batch = []
+
+        # Calculate the size of the predictions pool
+        roi_size = roi_pool.shape[0]
+
+        # With the files loaded get the data
+        with load_bigwig(self.signal) as signal_stream, load_2bit(self.sequence) as sequence_stream:
+            for row_idx in range(roi_size):
+                # Get the single row
+                row = roi_pool.loc[row_idx, :]
+
+                # Get the matric of values for the entry
+                input_matrix = get_input_matrix(signal_stream=signal_stream,
+                                                sequence_stream=sequence_stream,
+                                                chromosome=row[0],
+                                                start=int(row[1]),
+                                                end=int(row[2]),
+                                                use_complement=self.use_complement,
+                                                reverse_matrix=self.use_complement)
+
+                # Append the matrix of values to the batch list
+                inputs_batch.append(input_matrix)
+
+        return np.array(inputs_batch)
+
+
+def make_stranded_predictions(model_config: dict,
+                              roi_pool: pd.DataFrame,
                               signal: str,
                               sequence: str,
                               model: str,
                               batch_size: int,
                               use_complement: bool,
                               chromosome: str,
-                              number_intervals: int =32,
-                              input_channels: int =INPUT_CHANNELS,
-                              input_length: int =INPUT_LENGTH):
-
+                              train_args: dict,
+                              inter_fusion: bool = False,
+                              number_intervals: int = 32,
+                              input_channels: int = INPUT_CHANNELS,
+                              input_length: int = INPUT_LENGTH
+                              ):
     chr_roi_pool = roi_pool[roi_pool["chr"] == chromosome].copy()
 
-    logging.error("Load pre-trained model")
+    logging.info("Load pre-trained model")
 
-    nn_model = load_model(model, compile=False)
+    # model: str now points to the file with the weights
+    try:
+        nn_model = load_model(model, compile=False)
+    except:
+        maxatac_model = MaxATACModel(arch=train_args["arch"],
+                                     seed=train_args["seed"],
+                                     model_config=model_config,
+                                     output_directory=train_args["output"],
+                                     prefix=train_args["prefix"],
+                                     threads=train_args["threads"],
+                                     meta_path=train_args["meta_file"],
+                                     output_activation=train_args["output_activation"],
+                                     dense=train_args["dense"],
+                                     weights=model,
+                                     inter_fusion=inter_fusion
+                                     )
+        nn_model = maxatac_model.nn_model
 
-    logging.error("Start Prediction Generator")
+        logging.info("Start Prediction Generator")
 
-    data_generator = PredictionDataGenerator(signal=signal,
-                                             sequence=sequence,
-                                             input_channels=input_channels,
-                                             input_length=input_length,
-                                             predict_roi_df=chr_roi_pool,
-                                             batch_size=batch_size,
-                                             use_complement=use_complement)
-    
-    logging.error("Making predictions")
+    data_generator = PredictionDataGenerator_tfds(signal=signal,
+                                                  sequence=sequence,
+                                                  input_channels=input_channels,
+                                                  input_length=input_length,
+                                                  predict_roi_df=chr_roi_pool,
+                                                  batch_size=batch_size,
+                                                  use_complement=use_complement,
+                                                  inter_fusion=inter_fusion)
+
+    logging.info("Making predictions")
 
     predictions = nn_model.predict(data_generator)
-  
-    logging.error("Parsing results into pandas dataframe")
+
+    logging.info("Parsing results into pandas dataframe")
 
     predictions_df = pd.DataFrame(data=predictions, index=None, columns=None)
-    
+
     if use_complement:
         # If reverse + complement used, reverse the columns of the pandas df in order to
         predictions_df = predictions_df[predictions_df.columns[::-1]]

@@ -21,21 +21,23 @@ ___
 
 It is best to install maxATAC into a dedicated virtual environment.
 
-This version requires python 3.9, `bedtools`, `samtools`, `pigz`, `wget`, `git`, and `bedGraphToBigWig` in order to run all functions.
+This version requires python 3.9, `bedtools`, `samtools`, `pigz`, `wget`, `git`, `graphviz`, and `ucsc-bedgraphtobigwig` in order to run all functions.
 
-> The total install requirements for maxATAC with reference data are ~2 GB.
+> The total install data requirements for maxATAC is ~2 GB.
 
 ### Installing with Conda
 
 1. Create a conda environment for maxATAC with `conda create -n maxatac -c bioconda python=3.9 samtools wget bedtools ucsc-bedgraphtobigwig pigz`
 
-> If you get an error installing ucsc-bedgraphtobigwig try `conda install -c bioconda ucsc-bedgraphtobigwig`
+> If you get an error regarding graphviz while training a model, re-install graphviz with `conda install graphviz`
 
 2. Install maxATAC with `pip install maxatac`
 
 3. Test installation with `maxatac -h`
 
 4. Download reference data with `maxatac data`
+
+> If you have an error related to pybigwig, reference issues: [96](https://github.com/MiraldiLab/maxATAC/issues/96) and [87](https://github.com/MiraldiLab/maxATAC/issues/87#issue-1139117054)
 
 ### Installing with python virtualenv
 
@@ -60,7 +62,7 @@ In order to run the maxATAC models that were described in the [maxATAC pre-print
 * TF specific thresholding files
 * Bash scripts for preparing data
 
-The easiest option is to use the command `maxatac data` to download the data to the required directory. The `maxatac data` function will download the maxATAC_data repo and reference data into your `~/opt/` directory under `~/opt/maxatac`. Only the hg38 reference genome is supported.
+The easiest option is to use the command `maxatac data` to download the data to the required directory. The `maxatac data` function will download the maxATAC_data repo and reference data into your `~/opt/` directory under `~/opt/maxatac`. Only the hg38 reference genome has been extensively tested.
 
 #### Using custom reference data
 
@@ -95,7 +97,7 @@ The maxATAC models were trained on paired-end ATAC-seq data in human. For this r
 
 ### Preparing the ATAC-seq signal
 
-The current `maxatac predict` function requires a normalized ATAC-seq signal in a bigwig format. Use `maxatac prepare` to generate a normalized signal track from a `.bam` file of aligned reads.
+The current `maxatac predict` function requires a normalized ATAC-seq signal in a bigwig format. Use `maxatac prepare` to generate a normalized signal track from a `.bam` file of aligned reads. See [the prepare documentation](./docs/readme/prepare.md) for more details about the expected outputs and file name descriptions.
 
 #### Bulk ATAC-seq
 
@@ -128,13 +130,13 @@ TF binding predictions can be made genome-wide, for a single chromosome, or, alt
 Example command for TFBS prediction across the whole genome:
 
 ```bash
-maxatac predict --sequence hg38.2bit -tf CTCF --signal GM12878.bigwig -o outputdir/
+maxatac predict -tf CTCF --signal GM12878_IS_slop20_RP20M_minmax01.bw -o outputdir/
 ```
 
 If data has been installed with maxATAC data, then the following command will use the best model and call peaks using the TF specific threshold statistics. 
 
 ```bash
-maxatac predict -tf CTCF -s GM12878.bigwig -o outputdir/
+maxatac predict -tf CTCF -s GM12878_IS_slop20_RP20M_minmax01.bw  -o outputdir/
 ```
 
 ### Prediction in a specific genomic region(s)
@@ -142,7 +144,7 @@ maxatac predict -tf CTCF -s GM12878.bigwig -o outputdir/
 For TFBS predictions within specific regions of the genome, a `BED` file of genomic intervals, `roi` (regions of interest) are supplied:
 
 ```bash
-maxatac predict --sequence hg38.2bit -m CTCF.h5 --signal GM12878.bigwig --roi ROI.bed
+maxatac predict -tf CTCF --signal GM12878_IS_slop20_RP20M_minmax01.bw  --roi ROI.bed
 ```
 
 ### Prediction on a specific chromosome(s)
@@ -150,7 +152,7 @@ maxatac predict --sequence hg38.2bit -m CTCF.h5 --signal GM12878.bigwig --roi RO
 For TFBS predictions on a single chromosome or subset of chromosomes, these can be provided using the `--chromosomes` argument:
 
 ```bash
-maxatac predict --sequence hg38.2bit -m CTCF.h5 --signal GM12878.bigwig --chromosomes chr3 chr5
+maxatac predict -tf CTCF --signal GM12878_IS_slop20_RP20M_minmax01.bw  --chromosomes chr3 chr5
 ```
 
 ## Raw signal tracks (prediction bigwigs) are large
@@ -180,10 +182,8 @@ ___
 
 ## Publication
 
-The maxATAC pre-print is currently available on [bioRxiv](https://www.biorxiv.org/content/10.1101/2022.01.28.478235v1.article-metrics). 
+The maxATAC manuscript is available on [PLoS Computational Biology](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1010863). 
 
 ```pre
-maxATAC: genome-scale transcription-factor binding prediction from ATAC-seq with deep neural networks
-Tareian Cazares, Faiz W. Rizvi, Balaji Iyer, Xiaoting Chen, Michael Kotliar, Joseph A. Wayman, Anthony Bejjani, Omer Donmez, Benjamin Wronowski, Sreeja Parameswaran, Leah C. Kottyan, Artem Barski, Matthew T. Weirauch, VB Surya Prasath, Emily R. Miraldi
-bioRxiv 2022.01.28.478235; doi: https://doi.org/10.1101/2022.01.28.478235
+Tareian Cazares, Faiz W. Rizvi, Balaji Iyer, Xiaoting Chen, Michael Kotliar, Joseph A. Wayman, Anthony Bejjani, Omer Donmez, Benjamin Wronowski, Sreeja Parameswaran, Leah C. Kottyan, Artem Barski, Matthew T. Weirauch, VB Surya Prasath, Emily R. Miraldi (2023) maxATAC: Genome-scale transcription-factor binding prediction from ATAC-seq with deep neural networks. PLoS Comput Biol 19(1): e1010863. https://doi.org/10.1371/journal.pcbi.1010863
 ```

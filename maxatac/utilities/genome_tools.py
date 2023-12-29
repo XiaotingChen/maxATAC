@@ -7,12 +7,12 @@ import random
 from maxatac.utilities.system_tools import get_absolute_path
 
 
-def build_chrom_sizes_dict(chromosome_list: list, 
+def build_chrom_sizes_dict(chromosome_list: list,
                            chrom_sizes_filename: str):
     """Build a dictionary of chromosome sizes filtered for chromosomes in the input chromosome_list.
-    
-    The dictionary takes the form of: 
-    
+
+    The dictionary takes the form of:
+
         {"chr1": 248956422, "chr2": 242193529}
 
     Args:
@@ -21,9 +21,9 @@ def build_chrom_sizes_dict(chromosome_list: list,
 
     Returns:
         dict: A dictionary of chromosome sizes filtered by chromosome list.
-        
+
     Example:
-    
+
     >>> chrom_dict = build_chrom_sizes_dict(["chr1", "chr2"], "hg38.chrom.sizes")
     """
     # Import the data as pandas dataframe
@@ -34,8 +34,8 @@ def build_chrom_sizes_dict(chromosome_list: list,
 
     return pd.Series(chrom_sizes_df.len.values, index=chrom_sizes_df.chr).to_dict()
 
-    
-def dump_bigwig(location : str):
+
+def dump_bigwig(location: str):
     """Write a bigwig file to the location
 
     Args:
@@ -216,8 +216,8 @@ def safe_load_bigwig(location):
 def chromosome_blacklist_mask(blacklist, chromosome, chromosome_length, nBins=False, agg_method="max"):
     """
     Import the chromosome signal from a blacklist bigwig file and convert to a numpy array to use to generate the array
-    to use to exclude regions. If a number of bins are provided, then the function will use the stats method from 
-    pyBigWig to bin the data. 
+    to use to exclude regions. If a number of bins are provided, then the function will use the stats method from
+    pyBigWig to bin the data.
 
     :return: blacklist_mask: A np.array the has True for regions that are NOT in the blacklist.
     """
@@ -238,11 +238,12 @@ def chromosome_blacklist_mask(blacklist, chromosome, chromosome_length, nBins=Fa
                                                   chromosome_length,
                                                   numpy=True) != 1  # Convert to boolean array, select areas that are not 1
 
+
 def filter_chrom_sizes(chrom_sizes_path, chromosomes, target_chrom_sizes_file):
     df = pd.read_table(chrom_sizes_path, header=None, names=["chr", "length"])
-    
+
     df = df[df['chr'].isin(chromosomes)]
-    
+
     df.to_csv(target_chrom_sizes_file, sep="\t", header=False, index=False)
-    
+
     return target_chrom_sizes_file

@@ -13,7 +13,7 @@ def main(argsl=None):
 
     if argsl is None:
         argsl = sys.argv[1:]
-    
+
     args = parse_arguments(argsl)
     setup_logger(args.loglevel, LOG_FORMAT)
     print_args(args, logging.debug)

@@ -12,6 +12,10 @@ def export_model_structure(model, file_location, suffix="_model_structure", ext=
         model=model,
         show_shapes=True,
         show_layer_names=True,
+        show_layer_activations=True,
+        show_trainable=True,
+        expand_nested=True,
+        show_dtype=True,
         to_file=replace_extension(
             remove_tags(file_location, skip_tags),
             suffix + ext
