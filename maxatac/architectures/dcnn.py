@@ -439,7 +439,7 @@ def coeff_determination(y_true, y_pred):
 
     SS_res = K.sum(K.square(y_true - y_pred))
     SS_tot = K.sum(K.square(y_true - K.mean(y_true)))
-    return (1 - SS_res / (SS_tot + K.epsilon()))
+    return 1 - SS_res / (SS_tot + K.epsilon())
 
 
 def get_multihead_attention(
@@ -657,13 +657,13 @@ def get_dilated_cnn(
         metrics=[dice_coef],
         weighted_metrics=[
             MeanMetricWrapper(
-                    dice_coef_class(
-                        flanking_truncation_size=model_config[
-                            "LOSS_FLANKING_TRUNCATION_SIZE"
-                        ]
-                    ),
-                    name="weighted_dice_coef",
-                )
+                dice_coef_class(
+                    flanking_truncation_size=model_config[
+                        "LOSS_FLANKING_TRUNCATION_SIZE"
+                    ]
+                ),
+                name="weighted_dice_coef",
+            )
         ],
     )
 
@@ -674,5 +674,3 @@ def get_dilated_cnn(
         logging.debug("Weights loaded")
 
     return model
-
-

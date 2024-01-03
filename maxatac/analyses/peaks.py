@@ -31,32 +31,43 @@ def run_call_peaks(args):
         prefix = os.path.basename(args.input_bigwig).replace(".bw", "")
 
     # call peaks on all chromosomes
-    if args.chromosomes[0] == 'all':
+    if args.chromosomes[0] == "all":
         from maxatac.utilities.constants import AUTOSOMAL_CHRS as all_chr
+
         args.chromosomes = all_chr
 
     output_dir = get_dir(args.output_directory)
 
-    results_filename = os.path.join(output_dir, prefix + "_" + str(args.BIN_SIZE) + "bp.bed")
+    results_filename = os.path.join(
+        output_dir, prefix + "_" + str(args.BIN_SIZE) + "bp.bed"
+    )
 
-    thresh = get_threshold(cutoff_file=args.cutoff_file,
-                           cutoff_type=args.cutoff_type,
-                           cutoff_val=args.cutoff_value)
+    thresh = get_threshold(
+        cutoff_file=args.cutoff_file,
+        cutoff_type=args.cutoff_type,
+        cutoff_val=args.cutoff_value,
+    )
 
-    logging.info(f"Input filename: {args.input_bigwig}" +
-                  f"\n Target chroms: {args.chromosomes}" +
-                  f"\n Bin size: {args.BIN_SIZE}" +
-                  f"\n Cutoff type for Threshold: {args.cutoff_type}" +
-                  f"\n Cutoff value: {args.cutoff_value}" +
-                  f"\n Corresponding Threshold for Cutoff Type and Value discovered: {thresh}" +
-                  f"\n Filename prefix: {prefix}" +
-                  f"\n Output directory: {output_dir}" +
-                  f"\n Output filename: {results_filename}")
+    logging.info(
+        f"Input filename: {args.input_bigwig}"
+        + f"\n Target chroms: {args.chromosomes}"
+        + f"\n Bin size: {args.BIN_SIZE}"
+        + f"\n Cutoff type for Threshold: {args.cutoff_type}"
+        + f"\n Cutoff value: {args.cutoff_value}"
+        + f"\n Corresponding Threshold for Cutoff Type and Value discovered: {thresh}"
+        + f"\n Filename prefix: {prefix}"
+        + f"\n Output directory: {output_dir}"
+        + f"\n Output filename: {results_filename}"
+    )
 
     with Pool(int(multiprocessing.cpu_count())) as p:
-        results_list = p.starmap(call_peaks_per_chromosome,
-                                 [(args.input_bigwig, chromosome, thresh, args.BIN_SIZE) for chromosome in args.chromosomes]
-                                 )
+        results_list = p.starmap(
+            call_peaks_per_chromosome,
+            [
+                (args.input_bigwig, chromosome, thresh, args.BIN_SIZE)
+                for chromosome in args.chromosomes
+            ],
+        )
 
     logging.info("Combining results for all chromosomes.")
     # Concatenate results lists into a dataframe
@@ -77,9 +88,6 @@ def run_call_peaks(args):
     logging.info(f"Writing results to output {results_filename}.")
 
     # Write dataframe to a bed format file
-    BED_df.to_csv(results_filename,
-                  sep="\t",
-                  index=False,
-                  header=False)
+    BED_df.to_csv(results_filename, sep="\t", index=False, header=False)
 
     logging.info(f"Done!")

@@ -28,26 +28,32 @@ def run_data(args):
     # Command to clone the data repo
     clone = "git clone --depth 1 https://github.com/MiraldiLab/maxATAC_data.git"
 
-    os.chdir(maxatac_dir) # Change to the directory where the repo should be cloned
+    os.chdir(maxatac_dir)  # Change to the directory where the repo should be cloned
 
-    os.system(clone) # Cloning
+    os.system(clone)  # Cloning
 
-    dest = shutil.move(maxatac_repo_dir, maxatac_final_dir) # Rename the git directory to data
+    dest = shutil.move(
+        maxatac_repo_dir, maxatac_final_dir
+    )  # Rename the git directory to data
 
     # Set all genomes if selected
-    if args.genome == ['all']:
+    if args.genome == ["all"]:
         args.genome = ["hg38", "hg19", "mm10"]
 
     for genome in args.genome:
-        os.chdir(os.path.join(maxatac_final_dir, genome)) # change to the final data directory
+        os.chdir(
+            os.path.join(maxatac_final_dir, genome)
+        )  # change to the final data directory
         wget_2bit = f"wget --no-check-certificate https://hgdownload.cse.ucsc.edu/goldenpath/{genome}/bigZips/{genome}.2bit -O {genome}.2bit"
 
-    ############### Body ###############
-        logging.info(f"Downloading data for: {genome} \n" +
-                  f"Data will be installed: {args.output} \n" +
-                  f"Temporarily downlading data to: {maxatac_repo_dir} \n" +
-                  f"Final data will be placed in: {maxatac_final_dir}")
+        ############### Body ###############
+        logging.info(
+            f"Downloading data for: {genome} \n"
+            + f"Data will be installed: {args.output} \n"
+            + f"Temporarily downlading data to: {maxatac_repo_dir} \n"
+            + f"Final data will be placed in: {maxatac_final_dir}"
+        )
 
-        os.system(wget_2bit) # Wget 2bit
+        os.system(wget_2bit)  # Wget 2bit
 
     logging.info("Finished!")

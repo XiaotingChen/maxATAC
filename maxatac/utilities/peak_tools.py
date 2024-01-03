@@ -27,20 +27,26 @@ def call_peaks_per_chromosome(bigwig_path, chrom_name, threshold, bin_size=200):
         bin_count = int(int(chrom_length) / int(bin_size))
 
         logging.info(
-            "Start loading chromosome " + chrom_name +
-            "\n  Input signal: " + bigwig_path +
-            "\n  Binning: " + str(bin_count) + " bins * " + str(bin_size) + " bp"
+            "Start loading chromosome "
+            + chrom_name
+            + "\n  Input signal: "
+            + bigwig_path
+            + "\n  Binning: "
+            + str(bin_count)
+            + " bins * "
+            + str(bin_size)
+            + " bp"
         )
 
         # Get the chromosome valies into an np array.
-        chrom_vals = np.nan_to_num(np.array(signal_stream.stats(chrom_name,
-                                                                0,
-                                                                chrom_length,
-                                                                type="max",
-                                                                nBins=bin_count,
-                                                                exact=True),
-                                            dtype=float  # need it to have NaN instead of None
-                                            ))
+        chrom_vals = np.nan_to_num(
+            np.array(
+                signal_stream.stats(
+                    chrom_name, 0, chrom_length, type="max", nBins=bin_count, exact=True
+                ),
+                dtype=float,  # need it to have NaN instead of None
+            )
+        )
 
         # Find threshold around the given recall or precision
         target_bin_idx_list = np.argwhere(chrom_vals >= threshold)
@@ -52,31 +58,35 @@ def call_peaks_per_chromosome(bigwig_path, chrom_name, threshold, bin_size=200):
         for prediction_bin in target_bin_idx_list:
             start = prediction_bin * bin_size
 
-            BIN_list.append([chrom_name,
-                             start[0],
-                             start[0] + bin_size + 1,
-                             chrom_vals[prediction_bin][0]
-                             ])
+            BIN_list.append(
+                [
+                    chrom_name,
+                    start[0],
+                    start[0] + bin_size + 1,
+                    chrom_vals[prediction_bin][0],
+                ]
+            )
 
     return pd.DataFrame(BIN_list, columns=["chr", "start", "end", "score"])
 
 
 def get_threshold(cutoff_file, cutoff_type, cutoff_val):
     # Find Threshold for specified cutoff values
-    df = pd.read_csv(cutoff_file, sep='\t')
+    df = pd.read_csv(cutoff_file, sep="\t")
 
     # Get correct label
-    dict = {"Precision": "Monotonic_Avg_Precision",
-            "Recall": "Monotonic_Avg_Recall",
-            "log2FC": "Monotonic_Avg_log2FC",
-            "F1": "Avg_F1"
-            }
+    dict = {
+        "Precision": "Monotonic_Avg_Precision",
+        "Recall": "Monotonic_Avg_Recall",
+        "log2FC": "Monotonic_Avg_log2FC",
+        "F1": "Avg_F1",
+    }
 
     col_name = dict[cutoff_type]
 
     if col_name == "Avg_F1":
         # Find correct threshold for maximum F1 Score
-        thresh = df.loc[df['Avg_F1'].idxmax()].Standard_Thresh
+        thresh = df.loc[df["Avg_F1"].idxmax()].Standard_Thresh
 
     else:
         # Find correct threshold

@@ -48,7 +48,11 @@ def get_files(current_dir, filename_pattern=None):
     files_dict = {}
     for root, dirs, files in walk(current_dir):
         files_dict.update(
-            {filename: path.join(root, filename) for filename in files if match(filename_pattern, filename)}
+            {
+                filename: path.join(root, filename)
+                for filename in files
+                if match(filename_pattern, filename)
+            }
         )
     return files_dict
 
@@ -70,12 +74,7 @@ def remove_tags(l, tags):
 
 
 def replace_extension(l, ext):
-    return get_absolute_path(
-        path.join(
-            path.dirname(l),
-            get_rootname(l) + ext
-        )
-    )
+    return get_absolute_path(path.join(path.dirname(l), get_rootname(l) + ext))
 
 
 def setup_logger(log_level, log_format):
@@ -90,8 +89,7 @@ def setup_logger(log_level, log_format):
     environ["TF_CPP_MIN_LOG_LEVEL"] = str(CPP_LOG_LEVEL[log_level])
 
 
-class EmptyStream():
-
+class EmptyStream:
     def __enter__(self):
         return None
 
@@ -99,7 +97,7 @@ class EmptyStream():
         pass
 
 
-class Mute():
+class Mute:
     NULL_FDS = []
     BACKUP_FDS = []
 
@@ -144,7 +142,11 @@ def check_data_packages_installed():
 
 
 def raise_exception(e, package, install_link):
-    print("command '{}' return with error (code {}): {}. Make sure {} is installed in your path {}.".format(e.cmd, e.returncode, e.output, package, install_link))
+    print(
+        "command '{}' return with error (code {}): {}. Make sure {} is installed in your path {}.".format(
+            e.cmd, e.returncode, e.output, package, install_link
+        )
+    )
     sys.exit()
 
 
@@ -174,9 +176,13 @@ def check_prepare_packages_installed():
         raise_exception(e, "pigz", "https://zlib.net/pigz/")
 
     try:
-        subprocess.run(["which", "bedGraphToBigWig"], stdout=subprocess.DEVNULL, check=True)
+        subprocess.run(
+            ["which", "bedGraphToBigWig"], stdout=subprocess.DEVNULL, check=True
+        )
     except subprocess.CalledProcessError as e:
-        raise_exception(e, "bedGraphToBigWig", "https://anaconda.org/bioconda/ucsc-bedgraphtobigwig")
+        raise_exception(
+            e, "bedGraphToBigWig", "https://anaconda.org/bioconda/ucsc-bedgraphtobigwig"
+        )
 
 
 class Namespace:
@@ -190,6 +196,7 @@ class Namespace:
     >>> args.b
     'c'
     """
+
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
@@ -207,18 +214,24 @@ def update_reference_genome_paths(args):
     logging.info(f"Generating Paths for genome build: {args.genome} \n")
 
     # build maxatac data path
-    maxatac_data_path = os.path.join(os.path.expanduser('~'), "opt", "maxatac", "data")
+    maxatac_data_path = os.path.join(os.path.expanduser("~"), "opt", "maxatac", "data")
 
     # build genome specific paths
-    blacklist_path = os.path.join(maxatac_data_path,
-                                  f"{args.genome}/{args.genome}_maxatac_blacklist.bed")  # maxATAC extended blacklist as bed
+    blacklist_path = os.path.join(
+        maxatac_data_path, f"{args.genome}/{args.genome}_maxatac_blacklist.bed"
+    )  # maxATAC extended blacklist as bed
 
-    blacklist_bigwig_path = os.path.join(maxatac_data_path,
-                                         f"{args.genome}/{args.genome}_maxatac_blacklist.bw")  # maxATAC extended blacklist as bigwig
+    blacklist_bigwig_path = os.path.join(
+        maxatac_data_path, f"{args.genome}/{args.genome}_maxatac_blacklist.bw"
+    )  # maxATAC extended blacklist as bigwig
 
-    chrom_sizes_path = os.path.join(maxatac_data_path, f"{args.genome}/{args.genome}.chrom.sizes")  # chrom sizes file
+    chrom_sizes_path = os.path.join(
+        maxatac_data_path, f"{args.genome}/{args.genome}.chrom.sizes"
+    )  # chrom sizes file
 
-    sequence_path = os.path.join(maxatac_data_path, f"{args.genome}/{args.genome}.2bit")  # sequence 2bit
+    sequence_path = os.path.join(
+        maxatac_data_path, f"{args.genome}/{args.genome}.2bit"
+    )  # sequence 2bit
 
     # normalize paths
     args.blacklist = blacklist_path

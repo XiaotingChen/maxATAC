@@ -18,7 +18,7 @@ def get_callbacks(
     tensor_board_write_images=False,
     tensor_board_write_graph=True,
     reduce_lr_on_plateau=False,
-    initial_lr=0.001
+    initial_lr=0.001,
 ):
     callbacks = [
         ModelCheckpoint(

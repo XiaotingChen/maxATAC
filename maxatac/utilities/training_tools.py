@@ -69,6 +69,7 @@ class MaxATACModel(object):
         interpret=False,
         interpret_cell_type="",
         inter_fusion=False,
+        deterministic=False,
     ):
         """
         Initialize the maxATAC model with the input parameters and architecture
@@ -104,11 +105,12 @@ class MaxATACModel(object):
         self.weights = weights
         self.target_scale_factor = target_scale_factor
         self.inter_fusion = inter_fusion
+        self.deterministic = deterministic
 
         # Set the random seed for the model
-        random.seed(seed)
-        np.random.seed(seed)
-        tf.random.set_seed(seed)
+        tf.keras.utils.set_random_seed(self.seed)
+        if self.deterministic:
+            tf.config.experimental.enable_op_determinism()
 
         # Import meta txt as dataframe
         self.meta_dataframe = pd.read_csv(
@@ -824,7 +826,7 @@ class DataGen:
         self.flanking_padding_size = flanking_padding_size
         self.window_size = window_size
         self.override_shrinkage_factor = override_shrinkage_factor
-        self.suppress_cell_type_TN_weight=suppress_cell_type_TN_weight
+        self.suppress_cell_type_TN_weight = suppress_cell_type_TN_weight
 
         if self.chip == False:
             self.roi_pool["Weight shrinkage factor"] = 1.0 / float(
@@ -931,8 +933,10 @@ class DataGen:
 
             if self.suppress_cell_type_TN_weight:
                 bin_vector_sum = np.sum(bin_vector)
-                if bin_vector_sum==0:
-                    weight_shrinkage_factor=1.0/float(self.chip_sample_weight_baseline) # so this gets sample_weight back to 1 for cell type specific TN samples
+                if bin_vector_sum == 0:
+                    weight_shrinkage_factor = 1.0 / float(
+                        self.chip_sample_weight_baseline
+                    )  # so this gets sample_weight back to 1 for cell type specific TN samples
 
             # Append the sample to the target batch
             # targets_batch.append(bin_vector)
@@ -1699,7 +1703,6 @@ class GenomicRegions(object):
         return df
 
 
-
 def save_metadata(output_dir, args, model_config=None, extra=None):
     """
     Save the metadata every time the model is run
@@ -1715,7 +1718,7 @@ def save_metadata(output_dir, args, model_config=None, extra=None):
         if ((not i.startswith("__")) and (i not in common_python_modules))
     ]
     constants_dict = {name: getattr(constants, name) for name in constants_names}
-    with open(os.path.join(output_dir, "constants.json"), "w+") as f:
+    with open(os.path.join(output_dir, "constants.json"), "w") as f:
         json.dump(constants_dict, f, sort_keys=True, indent=3)
 
     # Save the meta file used to train the model
@@ -1726,7 +1729,7 @@ def save_metadata(output_dir, args, model_config=None, extra=None):
     args_dict = vars(args)
     args_dict.pop("func", None)
 
-    with open(os.path.join(output_dir, "cmd_args.json"), "w+") as f:
+    with open(os.path.join(output_dir, "cmd_args.json"), "w") as f:
         json.dump(args_dict, f, sort_keys=False, indent=3)
 
     if model_config != None:
@@ -1774,11 +1777,13 @@ def CHIP_sample_weight_adjustment(CHIP_roi_df):
         ["Chr", "Start", "Stop", "ROI_Type", "Cell_Line", "Weight shrinkage factor"]
     ]
 
-def update_model_config_from_args(model_config,args,keys):
+
+def update_model_config_from_args(model_config, args, keys):
     for key in keys:
-        model_config[key]=getattr(args.key)
+        model_config[key] = getattr(args, key)
 
     return model_config
+
 
 def peak_centric_map_tf(x, y, w):
     shift = tf.constant(512, dtype=tf.int32)
@@ -1792,6 +1797,7 @@ def peak_centric_map_tf(x, y, w):
         w,
     )
 
+
 def random_shuffling_map_tf(x, y, w):
     shift = tf.random.uniform([1], minval=0, maxval=INPUT_LENGTH, dtype=tf.int32)[0]
     y_shift = tf.cast(tf.math.divide_no_nan(shift, OUTPUT_LENGTH), dtype=tf.int32)
@@ -1804,8 +1810,10 @@ def random_shuffling_map_tf(x, y, w):
         w,
     )
 
-def no_mapping_tf(x,y,w):
-  return x,y,w
+
+def no_mapping_tf(x, y, w):
+    return x, y, w
+
 
 dataset_mapping = {
     "random": random_shuffling_map_tf,
@@ -1813,13 +1821,14 @@ dataset_mapping = {
     "no_map": no_mapping_tf,
 }
 
+
 def generate_tfds_files(
     args, maxatac_model, train_examples, validate_examples, model_config
 ):
     data_meta = pd.DataFrame(
         columns=["train or valid", "tf", "cell_type", "roi_type", "path"]
     )
-    chr_limit = build_chrom_sizes_dict(chrom_sizes_filename=args.chromosome_size_file)
+    chr_limit = build_chrom_sizes_dict(chrom_sizes_filename=args.CHROMOSOME_SIZE_FILE)
     transcription_factor = (
         args.meta_file.split("/")[-1].split(".")[0].split("meta_file_")[1]
     )
@@ -1832,29 +1841,29 @@ def generate_tfds_files(
             roi_pool_atac=validate_examples.ROI_pool_ATAC,
             roi_pool_chip=validate_examples.ROI_pool_CHIP,
             cell_type_list=maxatac_model.cell_types,
-            atac_sampling_multiplier=args.ATAC_Sampling_Multiplier,
-            chip_sample_weight_baseline=args.CHIP_Sample_Weight_Baseline,
+            atac_sampling_multiplier=args.ATAC_SAMPLING_MULTIPLIER,
+            chip_sample_weight_baseline=args.CHIP_SAMPLE_WEIGHT_BASELINE,
             batch_size=args.batch_size,
             shuffle=True,
             chr_limit=chr_limit,
-            flanking_padding_size=args.flanking_size,
+            flanking_padding_size=args.FLANKING_SIZE,
             override_chip_shrinkage_factor=True,
         ),
         output_signature=(
             tf.TensorSpec(
-                shape=(INPUT_LENGTH + 2 * args.flanking_size, INPUT_CHANNELS),
+                shape=(INPUT_LENGTH + 2 * args.FLANKING_SIZE, INPUT_CHANNELS),
                 dtype=tf.float32,
             ),
             tf.TensorSpec(
                 shape=(
-                    OUTPUT_LENGTH + int(np.ceil(args.flanking_size * 2 / BP_RESOLUTION))
+                    OUTPUT_LENGTH + int(np.ceil(args.FLANKING_SIZE * 2 / BP_RESOLUTION))
                 ),
                 dtype=tf.float32,
             ),
             tf.TensorSpec(shape=(), dtype=tf.float32),
         ),
     )
-    data_path = "{}/{}/{}".format(args.tfds_path, "valid", transcription_factor)
+    data_path = "{}/{}/{}".format(args.TFDS_PATH, "valid", transcription_factor)
     data.save(
         path=data_path,
         compression="GZIP",
@@ -1877,21 +1886,21 @@ def generate_tfds_files(
             roi_pool=train_examples.ROI_pool_ATAC,
             chip=False,
             cell_type=None,
-            atac_sampling_multiplier=args.ATAC_Sampling_Multiplier,
-            chip_sample_weight_baseline=args.CHIP_Sample_Weight_Baseline,
+            atac_sampling_multiplier=args.ATAC_SAMPLING_MULTIPLIER,
+            chip_sample_weight_baseline=args.CHIP_SAMPLE_WEIGHT_BASELINE,
             batch_size=args.batch_size,
             shuffle=True,
             chr_limit=chr_limit,
-            flanking_padding_size=args.flanking_size,
+            flanking_padding_size=args.FLANKING_SIZE,
         ),
         output_signature=(
             tf.TensorSpec(
-                shape=(INPUT_LENGTH + 2 * args.flanking_size, INPUT_CHANNELS),
+                shape=(INPUT_LENGTH + 2 * args.FLANKING_SIZE, INPUT_CHANNELS),
                 dtype=tf.float32,
             ),
             tf.TensorSpec(
                 shape=(
-                    OUTPUT_LENGTH + int(np.ceil(args.flanking_size * 2 / BP_RESOLUTION))
+                    OUTPUT_LENGTH + int(np.ceil(args.FLANKING_SIZE * 2 / BP_RESOLUTION))
                 ),
                 dtype=tf.float32,
             ),
@@ -1899,7 +1908,7 @@ def generate_tfds_files(
         ),
     )
     data_path = "{}/{}/{}_{}_{}".format(
-        args.tfds_path, "train", transcription_factor, ".", "ATAC"
+        args.TFDS_PATH, "train", transcription_factor, ".", "ATAC"
     )
     data.save(
         path=data_path,
@@ -1924,12 +1933,12 @@ def generate_tfds_files(
                 roi_pool=train_examples.ROI_pool_CHIP,
                 chip=True,
                 cell_type=cell_type,
-                atac_sampling_multiplier=args.ATAC_Sampling_Multiplier,
-                chip_sample_weight_baseline=args.CHIP_Sample_Weight_Baseline,
+                atac_sampling_multiplier=args.ATAC_SAMPLING_MULTIPLIER,
+                chip_sample_weight_baseline=args.CHIP_SAMPLE_WEIGHT_BASELINE,
                 batch_size=args.batch_size,
                 shuffle=True,
                 chr_limit=chr_limit,
-                flanking_padding_size=args.flanking_size,
+                flanking_padding_size=args.FLANKING_SIZE,
                 override_shrinkage_factor=True,
                 suppress_cell_type_TN_weight=model_config[
                     "SUPPRESS_CELL_TYPE_SPECIFIC_TN_WEIGHTS"
@@ -1937,13 +1946,13 @@ def generate_tfds_files(
             ),
             output_signature=(
                 tf.TensorSpec(
-                    shape=(INPUT_LENGTH + 2 * args.flanking_size, INPUT_CHANNELS),
+                    shape=(INPUT_LENGTH + 2 * args.FLANKING_SIZE, INPUT_CHANNELS),
                     dtype=tf.float32,
                 ),
                 tf.TensorSpec(
                     shape=(
                         OUTPUT_LENGTH
-                        + int(np.ceil(args.flanking_size * 2 / BP_RESOLUTION))
+                        + int(np.ceil(args.FLANKING_SIZE * 2 / BP_RESOLUTION))
                     ),
                     dtype=tf.float32,
                 ),
@@ -1951,7 +1960,7 @@ def generate_tfds_files(
             ),
         )
         data_path = "{}/{}/{}_{}_{}".format(
-            args.tfds_path, "train", transcription_factor, cell_type, "CHIP"
+            args.TFDS_PATH, "train", transcription_factor, cell_type, "CHIP"
         )
         data.save(
             path=data_path,
@@ -1965,4 +1974,4 @@ def generate_tfds_files(
             data_path,
         ]
 
-    data_meta.to_csv(args.tfds_meta, header=True, index=False, sep="\t")
+    data_meta.to_csv(args.TFDS_META, header=True, index=False, sep="\t")

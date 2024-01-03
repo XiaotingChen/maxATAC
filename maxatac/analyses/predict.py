@@ -14,8 +14,12 @@ from maxatac.utilities.system_tools import get_dir, Mute
 with Mute():
     from maxatac.utilities.genome_tools import build_chrom_sizes_dict
     from maxatac.utilities.peak_tools import get_threshold
-    from maxatac.utilities.prediction_tools import write_predictions_to_bigwig, \
-        import_prediction_regions, create_prediction_regions, make_stranded_predictions
+    from maxatac.utilities.prediction_tools import (
+        write_predictions_to_bigwig,
+        import_prediction_regions,
+        create_prediction_regions,
+        make_stranded_predictions,
+    )
     from maxatac.utilities.constants import DATA_PATH
     from maxatac.analyses.peaks import run_call_peaks
 
@@ -52,9 +56,13 @@ def run_prediction(args):
 
     # If the user provides the TF name,
     if args.TF:
-        args.model = glob.glob(os.path.join(args.DATA_PATH, "models", args.TF, args.TF + "*.h5"))[0]
+        args.model = glob.glob(
+            os.path.join(args.DATA_PATH, "models", args.TF, args.TF + "*.h5")
+        )[0]
 
-        args.cutoff_file = glob.glob(os.path.join(args.DATA_PATH, "models", args.TF, args.TF + "*.tsv"))[0]
+        args.cutoff_file = glob.glob(
+            os.path.join(args.DATA_PATH, "models", args.TF, args.TF + "*.tsv")
+        )[0]
 
     else:
         pass
@@ -62,8 +70,9 @@ def run_prediction(args):
     logging.info(f"Using maxATAC model: {args.model} to make predictions")
 
     # predict on all chromosomes
-    if args.chromosomes[0] == 'all':
+    if args.chromosomes[0] == "all":
         from maxatac.utilities.constants import AUTOSOMAL_CHRS as all_chr
+
         args.chromosomes = all_chr
 
     # Create the output directory set by the parser
@@ -85,33 +94,39 @@ def run_prediction(args):
     # Create a dictionary of chromosome sizes used to make the bigwig files
     chrom_sizes_dict = build_chrom_sizes_dict(args.chromosomes, args.chrom_sizes)
 
-
     # Import the regions for prediction.
     logging.info("Create prediction regions")
-    regions_pool = create_prediction_regions(chromosomes=args.chromosomes,
-                                                 chrom_sizes=args.chrom_sizes,
-                                                 blacklist=args.blacklist,
-                                                 step_size=args.step_size,
-                                                 peaks=args.roi,
-                                                 windows=args.windows
-                                                 )
+    regions_pool = create_prediction_regions(
+        chromosomes=args.chromosomes,
+        chrom_sizes=args.chrom_sizes,
+        blacklist=args.blacklist,
+        step_size=args.step_size,
+        peaks=args.roi,
+        windows=args.windows,
+    )
 
     # Find the chromosomes for which we can make predictions based on the requested chroms
     # and the BED regions provided in the ROI file
-    chrom_list = list(set(args.chromosomes).intersection(set(regions_pool["chr"].unique())))
+    chrom_list = list(
+        set(args.chromosomes).intersection(set(regions_pool["chr"].unique()))
+    )
 
-    logging.info("Prediction Parameters \n" +
-                  f"Output filename: {outfile_name_bigwig} \n" +
-                  f"Target signal: {args.signal} \n" +
-                  f"Sequence data: {args.sequence} \n" +
-                  f"Model: {args.model} \n" +
-                  "Chromosome requested: \n   - " + "\n    -".join(args.chromosomes) + "\n" +
-                  "Chromosomes in final prediction set: \n   - " + "\n    -".join(chrom_list) + "\n" +
-                  f"Output directory: {output_directory} \n" +
-                  f"Batch Size: {args.batch_size} \n" +
-                  f"Output filename: {outfile_name_bigwig}"
-                  )
-
+    logging.info(
+        "Prediction Parameters \n"
+        + f"Output filename: {outfile_name_bigwig} \n"
+        + f"Target signal: {args.signal} \n"
+        + f"Sequence data: {args.sequence} \n"
+        + f"Model: {args.model} \n"
+        + "Chromosome requested: \n   - "
+        + "\n    -".join(args.chromosomes)
+        + "\n"
+        + "Chromosomes in final prediction set: \n   - "
+        + "\n    -".join(chrom_list)
+        + "\n"
+        + f"Output directory: {output_directory} \n"
+        + f"Batch Size: {args.batch_size} \n"
+        + f"Output filename: {outfile_name_bigwig}"
+    )
 
     with Pool(int(multiprocessing.cpu_count())) as p:
         forward_strand_predictions = p.starmap(
@@ -127,9 +142,10 @@ def run_prediction(args):
                     False,
                     chromosome,
                     train_args,
-                    model_config["INTER_FUSION"]
-               ) for chromosome in chrom_list
-            ]
+                    model_config["INTER_FUSION"],
+                )
+                for chromosome in chrom_list
+            ],
         )
 
     # Write the predictions to a bigwig file and add name to args
@@ -137,11 +153,12 @@ def run_prediction(args):
 
     logging.info("Write predictions to a bigwig file")
 
-    write_predictions_to_bigwig(prediction_bedgraph,
-                                output_filename=outfile_name_bigwig,
-                                chrom_sizes_dictionary=chrom_sizes_dict,
-                                chromosomes=chrom_list
-                                )
+    write_predictions_to_bigwig(
+        prediction_bedgraph,
+        output_filename=outfile_name_bigwig,
+        chrom_sizes_dictionary=chrom_sizes_dict,
+        chromosomes=chrom_list,
+    )
 
     # If a cutoff file is provided, call peaks
     if args.cutoff_file and args.skip_call_peaks is False:
@@ -149,19 +166,24 @@ def run_prediction(args):
 
         peaks_filename = os.path.join(output_directory, args.name + "_peaks.bed")
 
+        thresh = get_threshold(
+            cutoff_file=args.cutoff_file,
+            cutoff_type=args.cutoff_type,
+            cutoff_val=args.cutoff_value,
+        )
 
-        thresh = get_threshold(cutoff_file=args.cutoff_file,
-                               cutoff_type=args.cutoff_type,
-                               cutoff_val=args.cutoff_value)
-
-        logging.info(f"Writing predictions to a BED file: {peaks_filename}" +
-                     f"\n Cutoff type for Threshold: {args.cutoff_type}" +
-                     f"\n Cutoff value: {args.cutoff_value}" +
-                     f"\n Corresponding Threshold for Cutoff Type and Value discovered: {thresh}" +
-                     f"\n Output filename: {peaks_filename}")
+        logging.info(
+            f"Writing predictions to a BED file: {peaks_filename}"
+            + f"\n Cutoff type for Threshold: {args.cutoff_type}"
+            + f"\n Cutoff value: {args.cutoff_value}"
+            + f"\n Corresponding Threshold for Cutoff Type and Value discovered: {thresh}"
+            + f"\n Output filename: {peaks_filename}"
+        )
 
         logging.debug(f"Filtering predictions by threshold score.")
-        prediction_bedgraph = prediction_bedgraph[prediction_bedgraph["score"] >= thresh]
+        prediction_bedgraph = prediction_bedgraph[
+            prediction_bedgraph["score"] >= thresh
+        ]
 
         # Convert the dataframe to a bedtools object
         peaks_bedtool = pybedtools.BedTool.from_dataframe(prediction_bedgraph)
@@ -177,11 +199,7 @@ def run_prediction(args):
 
         logging.debug(f"Writing BED file.")
         # Write dataframe to a bed format file
-        prediction_bed.to_csv(peaks_filename,
-                  sep="\t",
-                  index=False,
-                  header=False)
-
+        prediction_bed.to_csv(peaks_filename, sep="\t", index=False, header=False)
 
     # Measure end time of training
     stopTime = timeit.default_timer()

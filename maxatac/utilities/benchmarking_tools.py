@@ -22,17 +22,18 @@ class ChromosomeAUPRC(object):
     3) Calculate AUPRC stats
     """
 
-    def __init__(self,
-                 prediction_bw,
-                 goldstandard_bw,
-                 blacklist_bw,
-                 chromosome,
-                 bin_size,
-                 agg_function,
-                 results_location,
-                 round_predictions,
-                 plot=False
-                 ):
+    def __init__(
+        self,
+        prediction_bw,
+        goldstandard_bw,
+        blacklist_bw,
+        chromosome,
+        bin_size,
+        agg_function,
+        results_location,
+        round_predictions,
+        plot=False,
+    ):
         """
         :param prediction_bw: Path to bigwig file containing maxATAC predictions
         :param goldstandard_bw: Path to gold standard bigwig file
@@ -49,15 +50,16 @@ class ChromosomeAUPRC(object):
         self.chromosome = chromosome
         self.chromosome_length = self.goldstandard_stream.chroms(self.chromosome)
 
-        self.bin_count = int(int(self.chromosome_length) / int(bin_size))  # need to floor the number
+        self.bin_count = int(
+            int(self.chromosome_length) / int(bin_size)
+        )  # need to floor the number
         self.bin_size = bin_size
 
         self.agg_function = agg_function
 
-        self.blacklist_mask = chromosome_blacklist_mask(blacklist_bw,
-                                                        self.chromosome,
-                                                        self.chromosome_length,
-                                                        self.bin_count)
+        self.blacklist_mask = chromosome_blacklist_mask(
+            blacklist_bw, self.chromosome, self.chromosome_length, self.bin_count
+        )
 
         self.__import_prediction_array__(round_prediction=round_predictions)
         self.__import_goldstandard_array__()
@@ -77,15 +79,19 @@ class ChromosomeAUPRC(object):
         logging.info("Import Predictions Array")
 
         # Get the bin stats from the prediction array
-        self.prediction_array = np.nan_to_num(np.array(self.prediction_stream.stats(self.chromosome,
-                                                                                    0,
-                                                                                    self.chromosome_length,
-                                                                                    type=self.agg_function,
-                                                                                    nBins=self.bin_count,
-                                                                                    exact=True),
-                                                       dtype=float  # need it to have NaN instead of None
-                                                       )
-                                              )
+        self.prediction_array = np.nan_to_num(
+            np.array(
+                self.prediction_stream.stats(
+                    self.chromosome,
+                    0,
+                    self.chromosome_length,
+                    type=self.agg_function,
+                    nBins=self.bin_count,
+                    exact=True,
+                ),
+                dtype=float,  # need it to have NaN instead of None
+            )
+        )
 
         self.prediction_array = np.round(self.prediction_array, round_prediction)
 
@@ -100,19 +106,26 @@ class ChromosomeAUPRC(object):
         logging.info("Import Gold Standard Array")
 
         # Get the bin stats from the gold standard array
-        self.goldstandard_array = np.nan_to_num(np.array(self.goldstandard_stream.stats(self.chromosome,
-                                                                                        0,
-                                                                                        self.chromosome_length,
-                                                                                        type=self.agg_function,
-                                                                                        nBins=self.bin_count,
-                                                                                        exact=True
-                                                                                        ),
-                                                         dtype=float  # need it to have NaN instead of None
-                                                         )
-                                                ) > 0  # to convert to boolean array
+        self.goldstandard_array = (
+            np.nan_to_num(
+                np.array(
+                    self.goldstandard_stream.stats(
+                        self.chromosome,
+                        0,
+                        self.chromosome_length,
+                        type=self.agg_function,
+                        nBins=self.bin_count,
+                        exact=True,
+                    ),
+                    dtype=float,  # need it to have NaN instead of None
+                )
+            )
+            > 0
+        )  # to convert to boolean array
 
-        self.random_precision = np.count_nonzero(self.goldstandard_array[self.blacklist_mask]) / \
-                                np.size(self.prediction_array[self.blacklist_mask])
+        self.random_precision = np.count_nonzero(
+            self.goldstandard_array[self.blacklist_mask]
+        ) / np.size(self.prediction_array[self.blacklist_mask])
 
     def __get_true_positives__(self, threshold):
         """
@@ -182,7 +195,8 @@ class ChromosomeAUPRC(object):
 
         self.precision, self.recall, self.thresholds = precision_recall_curve(
             self.goldstandard_array[self.blacklist_mask],
-            self.prediction_array[self.blacklist_mask])
+            self.prediction_array[self.blacklist_mask],
+        )
 
         logging.info("Making DataFrame from results")
 
@@ -192,7 +206,12 @@ class ChromosomeAUPRC(object):
         # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_recall_curve.html
         # remove the last point of the array which corresponds to this extra point
         self.PR_CURVE_DF = pd.DataFrame(
-            {'Precision': self.precision[:-1], 'Recall': self.recall[:-1], "Threshold": self.thresholds})
+            {
+                "Precision": self.precision[:-1],
+                "Recall": self.recall[:-1],
+                "Threshold": self.thresholds,
+            }
+        )
 
         logging.info("Calculate AUPRc for " + self.chromosome)
 
@@ -204,21 +223,29 @@ class ChromosomeAUPRC(object):
         # Calculate the total gold standard bins
         logging.info("Calculate Total GoldStandard Bins")
 
-        self.PR_CURVE_DF["Total_GoldStandard_Bins"] = len(np.argwhere(self.goldstandard_array == True))
+        self.PR_CURVE_DF["Total_GoldStandard_Bins"] = len(
+            np.argwhere(self.goldstandard_array == True)
+        )
 
         # Find the number of non-blacklisted bins in chr of interest
         rand_bins = len(np.argwhere(self.blacklist_mask == True))
 
         # Random Precision
-        self.PR_CURVE_DF['Random_AUPRC'] = self.PR_CURVE_DF['Total_GoldStandard_Bins'] / rand_bins
+        self.PR_CURVE_DF["Random_AUPRC"] = (
+            self.PR_CURVE_DF["Total_GoldStandard_Bins"] / rand_bins
+        )
 
         # Log2FC
-        self.PR_CURVE_DF['log2FC_AUPRC_Random_AUPRC'] = np.log2(self.PR_CURVE_DF["AUPRC"] / self.PR_CURVE_DF["Random_AUPRC"])
+        self.PR_CURVE_DF["log2FC_AUPRC_Random_AUPRC"] = np.log2(
+            self.PR_CURVE_DF["AUPRC"] / self.PR_CURVE_DF["Random_AUPRC"]
+        )
 
         logging.info("Write results for " + self.chromosome)
 
         # Write the AUPRC stats to a dataframe
-        self.PR_CURVE_DF.to_csv(self.results_location, sep="\t", header=True, index=False)
+        self.PR_CURVE_DF.to_csv(
+            self.results_location, sep="\t", header=True, index=False
+        )
 
     def __plot(self, cmap="viridis"):
         points = np.array([self.recall, self.precision]).T.reshape(-1, 1, 2)

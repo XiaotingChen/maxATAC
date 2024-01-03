@@ -2,7 +2,11 @@ import logging
 import os
 from maxatac.utilities.system_tools import get_dir
 from maxatac.utilities.variant_tools import variant_specific_predict
-from maxatac.utilities.prediction_tools import write_predictions_to_bigwig, create_prediction_regions, import_prediction_regions
+from maxatac.utilities.prediction_tools import (
+    write_predictions_to_bigwig,
+    create_prediction_regions,
+    import_prediction_regions,
+)
 from maxatac.utilities.genome_tools import build_chrom_sizes_dict
 import pandas as pd
 import pybedtools
@@ -25,11 +29,12 @@ def run_variants(args):
         chr_dict = build_chrom_sizes_dict(args.chromosomes, args.chrom_sizes)
 
         logging.info("Import prediction regions")
-        regions_df = import_prediction_regions(bed_file=args.roi,
-                                                 chromosomes=args.chromosomes,
-                                                 chrom_sizes_dictionary=chr_dict,
-                                                 blacklist=args.blacklist,
-                                                 )
+        regions_df = import_prediction_regions(
+            bed_file=args.roi,
+            chromosomes=args.chromosomes,
+            chrom_sizes_dictionary=chr_dict,
+            blacklist=args.blacklist,
+        )
 
         regions_pool = pybedtools.BedTool.from_dataframe(regions_df)
 
@@ -39,27 +44,29 @@ def run_variants(args):
 
     else:
         logging.info("Create prediction regions")
-        bed_df = create_prediction_regions(chromosomes=args.chromosomes,
-                                           chrom_sizes=args.chrom_sizes,
-                                           blacklist=args.blacklist,
-                                           step_size=args.step_size
-                                           )
+        bed_df = create_prediction_regions(
+            chromosomes=args.chromosomes,
+            chrom_sizes=args.chrom_sizes,
+            blacklist=args.blacklist,
+            step_size=args.step_size,
+        )
 
         regions_pool = pybedtools.BedTool.from_dataframe(bed_df)
 
         chrom_list = args.chromosomes
 
-    logging.info(f"Making sequence specific predictions for: {args.input_bigwig} \n" +
-                  f"Writing files with name: {args.name} \n" +
-                  f"Output bigwig: {output_bw} \n" +
-                  f"Output bedgraph: {output_bg} \n" +
-                  f"Prediction Windows: {output_windows} \n" +
-                  f"Sequence file: {args.sequence} \n" +
-                  f"MaxATAC model: {args.model} \n" +
-                  f"Chromosome(s) requested: {chrom_list} \n" +
-                  f"Chromosome(s) final: {chrom_list} \n" +
-                  f"Variants Bed: {args.variants_bed}"
-                  )
+    logging.info(
+        f"Making sequence specific predictions for: {args.input_bigwig} \n"
+        + f"Writing files with name: {args.name} \n"
+        + f"Output bigwig: {output_bw} \n"
+        + f"Output bedgraph: {output_bg} \n"
+        + f"Prediction Windows: {output_windows} \n"
+        + f"Sequence file: {args.sequence} \n"
+        + f"MaxATAC model: {args.model} \n"
+        + f"Chromosome(s) requested: {chrom_list} \n"
+        + f"Chromosome(s) final: {chrom_list} \n"
+        + f"Variants Bed: {args.variants_bed}"
+    )
 
     try:
         os.mkdir(output_directory)
@@ -67,17 +74,14 @@ def run_variants(args):
     except OSError as error:
         print(error)
 
-    predictions = variant_specific_predict(args.model,
-                                           args.input_bigwig,
-                                           args.sequence,
-                                           regions_pool,
-                                           args.variants_bed)
+    predictions = variant_specific_predict(
+        args.model, args.input_bigwig, args.sequence, regions_pool, args.variants_bed
+    )
 
     predictions.to_csv(output_bg, sep="\t", index=False, header=False)
 
     chr_dict = build_chrom_sizes_dict(chrom_list, args.chrom_sizes)
 
-    write_predictions_to_bigwig(predictions,
-                                output_bw,
-                                chrom_sizes_dictionary=chr_dict,
-                                chromosomes=chrom_list)
+    write_predictions_to_bigwig(
+        predictions, output_bw, chrom_sizes_dictionary=chr_dict, chromosomes=chrom_list
+    )

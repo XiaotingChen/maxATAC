@@ -24,7 +24,9 @@ def get_roi_variant_overlap(variants_bed: str, roi_BT: pybedtools.BedTool):
     variants_BT = pybedtools.BedTool(variants_bed)
 
     # Intersect ROI with variants bed file and convert to dataframe
-    intersect_df = roi_BT.intersect(variants_BT, loj=True).to_dataframe(names=["chr", "start", "stop", "rs_chr", "rs_start", "rs_stop", "nucleotide"])
+    intersect_df = roi_BT.intersect(variants_BT, loj=True).to_dataframe(
+        names=["chr", "start", "stop", "rs_chr", "rs_start", "rs_stop", "nucleotide"]
+    )
 
     row_indices = []
 
@@ -40,13 +42,15 @@ def get_roi_variant_overlap(variants_bed: str, roi_BT: pybedtools.BedTool):
     return intersect_df
 
 
-def get_seq_specific_input_matrix(window,
-                                  signal: str,
-                                  sequence: str,
-                                  BP_DICT={"A": 0, "C": 1, "G": 2, "T": 3},
-                                  bp_order=BP_ORDER,
-                                  cols=1024,
-                                  rows=5):
+def get_seq_specific_input_matrix(
+    window,
+    signal: str,
+    sequence: str,
+    BP_DICT={"A": 0, "C": 1, "G": 2, "T": 3},
+    bp_order=BP_ORDER,
+    cols=1024,
+    rows=5,
+):
     """Get a sequence specific input matrix
 
     Args:
@@ -69,12 +73,16 @@ def get_seq_specific_input_matrix(window,
 
     for n, bp in enumerate(bp_order):
         # Get the sequence from the interval of interest
-        target_sequence = Seq(sequence_stream.sequence(window['chr'], window['start'], window['stop']))
+        target_sequence = Seq(
+            sequence_stream.sequence(window["chr"], window["start"], window["stop"])
+        )
 
         # Get the one hot encoded sequence
         input_matrix[n, :] = get_one_hot_encoded(target_sequence, bp)
 
-    signal_array = np.array(signal_stream.values(window['chr'], window['start'], window['stop']))
+    signal_array = np.array(
+        signal_stream.values(window["chr"], window["start"], window["stop"])
+    )
 
     input_matrix[4, :] = signal_array
 
@@ -89,7 +97,9 @@ def get_seq_specific_input_matrix(window,
 
         input_matrix[window["index"], nucleotide_index] = 1
 
-        other_nucleotides = [item for item in [0, 1, 2, 3] if item not in [nucleotide_index]]
+        other_nucleotides = [
+            item for item in [0, 1, 2, 3] if item not in [nucleotide_index]
+        ]
 
         input_matrix[window["index"], other_nucleotides[0]] = 0
         input_matrix[window["index"], other_nucleotides[1]] = 0
@@ -98,8 +108,7 @@ def get_seq_specific_input_matrix(window,
     return np.array([input_matrix])
 
 
-def convert_predictions_to_bedgraph(predictions: list,
-                                    predict_roi_df: pd.DataFrame):
+def convert_predictions_to_bedgraph(predictions: list, predict_roi_df: pd.DataFrame):
     """Convert output predictions to bedgraph
 
     Args:
@@ -116,34 +125,42 @@ def convert_predictions_to_bedgraph(predictions: list,
     predictions_df["stop"] = predict_roi_df["stop"]
 
     # Create BedTool object from the dataframe
-    coordinates_dataframe = pybedtools.BedTool.from_dataframe(predictions_df[['chr', 'start', 'stop']])
+    coordinates_dataframe = pybedtools.BedTool.from_dataframe(
+        predictions_df[["chr", "start", "stop"]]
+    )
 
     # Window the intervals into 32 bins
-    windowed_coordinates = coordinates_dataframe.window_maker(b=coordinates_dataframe, n=32)
+    windowed_coordinates = coordinates_dataframe.window_maker(
+        b=coordinates_dataframe, n=32
+    )
 
     # Create a dataframe from the BedTool object
     windowed_coordinates_dataframe = windowed_coordinates.to_dataframe()
 
     # Drop all columns except those that have scores in them
-    scores_dataframe = predictions_df.drop(['chr', 'start', 'stop'], axis=1)
+    scores_dataframe = predictions_df.drop(["chr", "start", "stop"], axis=1)
 
     # Take the scores and reshape them into a column of the pandas dataframe
-    windowed_coordinates_dataframe['score'] = scores_dataframe.to_numpy().flatten()
+    windowed_coordinates_dataframe["score"] = scores_dataframe.to_numpy().flatten()
 
     # Rename the columns of the dataframe
-    windowed_coordinates_dataframe.columns = ['chr', 'start', 'stop', 'score']
+    windowed_coordinates_dataframe.columns = ["chr", "start", "stop", "score"]
 
     # Get the mean of all sliding window predicitons
-    windowed_coordinates_dataframe = windowed_coordinates_dataframe.groupby(["chr", "start", "stop"], as_index=False).mean()
+    windowed_coordinates_dataframe = windowed_coordinates_dataframe.groupby(
+        ["chr", "start", "stop"], as_index=False
+    ).mean()
 
     return windowed_coordinates_dataframe
 
 
-def variant_specific_predict(model: str,
-                             signal: str,
-                             sequence: str,
-                             roi_BT: pybedtools.BedTool,
-                             variants_bed: str):
+def variant_specific_predict(
+    model: str,
+    signal: str,
+    sequence: str,
+    roi_BT: pybedtools.BedTool,
+    variants_bed: str,
+):
     """Make predictions in LD blocks
 
     Args:
@@ -172,6 +189,7 @@ def variant_specific_predict(model: str,
         prediction_list.append(nn_model.predict_on_batch(seq_specific_array).flatten())
 
     # convert all predictions to a bedgraph format dataframe
-    bedgraph_df = convert_predictions_to_bedgraph(predictions=prediction_list,
-                                                  predict_roi_df=prediction_windows)
+    bedgraph_df = convert_predictions_to_bedgraph(
+        predictions=prediction_list, predict_roi_df=prediction_windows
+    )
     return bedgraph_df

@@ -30,4 +30,4 @@ def test_fragments_to_tn5_bed():
     """
     assert convert_fragments_to_tn5_bed(fragments_tsv=input_file_path,
                                         chroms=["chr1"]
-                                        ).equals(expected_dataframe)
+                                        ).equals(expected_outputs)

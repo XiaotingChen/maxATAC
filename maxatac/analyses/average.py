@@ -39,17 +39,32 @@ def run_averaging(args):
     # Make the output bigwig filename from the output directory and the prefix
     output_bigwig_filename = os.path.join(output_dir, args.name + ".bw")
 
-    logging.info("Averaging " + str(number_input_bigwigs) + " bigwig files. \n" +
-                  "Input bigwig files: \n   - " + "\n   - ".join(args.bigwig_files) + "\n" +
-                  "Output name: " + args.name + "\n" +
-                  "Output directory: " + output_dir + "\n" +
-                  "Output filename: " + output_bigwig_filename + "\n" +
-                  "Restricting to chromosomes: \n   - " + "\n   - ".join(args.chromosomes) + "\n"
-                  )
+    logging.info(
+        "Averaging "
+        + str(number_input_bigwigs)
+        + " bigwig files. \n"
+        + "Input bigwig files: \n   - "
+        + "\n   - ".join(args.bigwig_files)
+        + "\n"
+        + "Output name: "
+        + args.name
+        + "\n"
+        + "Output directory: "
+        + output_dir
+        + "\n"
+        + "Output filename: "
+        + output_bigwig_filename
+        + "\n"
+        + "Restricting to chromosomes: \n   - "
+        + "\n   - ".join(args.chromosomes)
+        + "\n"
+    )
 
     # Build a dictionary of chromosomes sizes using the chromosomes and chromosome sizes files provided
     # The function will filter the dictionary based on the input list
-    chromosome_sizes_dictionary = build_chrom_sizes_dict(args.chromosomes, args.chromosome_sizes)
+    chromosome_sizes_dictionary = build_chrom_sizes_dict(
+        args.chromosomes, args.chromosome_sizes
+    )
 
     # Open the bigwig file for writing
     with pyBigWig.open(output_bigwig_filename, "w") as output_bw:
@@ -85,7 +100,7 @@ def run_averaging(args):
                 ends=chrom_length,
                 span=1,
                 step=1,
-                values=chrom_vals.tolist()
+                values=chrom_vals.tolist(),
             )
 
     # Measure time of averaging

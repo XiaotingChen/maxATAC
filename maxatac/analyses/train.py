@@ -15,7 +15,7 @@ from maxatac.utilities.constants import (
     INPUT_CHANNELS,
     OUTPUT_LENGTH,
     BP_RESOLUTION,
-    MODEL_CONFIG_UPDATE_LIST
+    MODEL_CONFIG_UPDATE_LIST,
 )
 from maxatac.utilities.system_tools import Mute
 
@@ -35,18 +35,16 @@ with Mute():
         DataGen,
         dataset_mapping,
         update_model_config_from_args,
-        generate_tfds_files
+        generate_tfds_files,
     )
     from maxatac.utilities.plot import (
         export_binary_metrics,
         export_loss_mse_coeff,
         export_model_structure,
-        plot_attention_weights,
     )
     from maxatac.utilities.genome_tools import (
         build_chrom_sizes_dict,
     )
-
 
 
 def run_training(args):
@@ -104,7 +102,9 @@ def run_training(args):
     with open(args.model_config, "r") as f:
         model_config = json.load(f)
 
-    model_config=update_model_config_from_args(model_config,args,MODEL_CONFIG_UPDATE_LIST)
+    model_config = update_model_config_from_args(
+        model_config, args, MODEL_CONFIG_UPDATE_LIST
+    )
 
     # Initialize the model with the architecture of choice
     maxatac_model = MaxATACModel(
@@ -119,6 +119,7 @@ def run_training(args):
         dense=args.dense,
         weights=args.weights,
         inter_fusion=model_config["INTER_FUSION"],
+        deterministic=args.DETERMINISTIC,
     )
 
     # export model structure
@@ -150,26 +151,26 @@ def run_training(args):
         tag="validation",
     )
 
-    if args.ATAC_Sampling_Multiplier != 0:
-        steps_per_epoch_v2 = int(
+    if args.ATAC_SAMPLING_MULTIPLIER != 0:
+        train_steps_per_epoch_v2 = int(
             train_examples.ROI_pool_CHIP.shape[0]
             * maxatac_model.meta_dataframe[
                 maxatac_model.meta_dataframe["Train_Test_Label"] == "Train"
             ].shape[0]
-            // np.ceil((args.batch_size / (1.0 + float(args.ATAC_Sampling_Multiplier))))
+            // np.ceil((args.batch_size / (1.0 + float(args.ATAC_SAMPLING_MULTIPLIER))))
         )
-        validation_steps_v2 = int(
+        valid_steps_per_epoch_v2 = int(
             validate_examples.ROI_pool.shape[0] // args.batch_size
         )
 
         # override max epoch when training sample upper bound is available
-        if args.training_sample_upper_bound != 0:
+        if args.TRAINING_SAMPLE_UPPER_BOUND != 0:
             args.epochs = int(
                 min(
                     args.epochs,
                     int(
-                        args.training_sample_upper_bound
-                        // (steps_per_epoch_v2 * args.batch_size)
+                        args.TRAINING_SAMPLE_UPPER_BOUND
+                        // (train_steps_per_epoch_v2 * args.batch_size)
                     ),
                 )
             )
@@ -185,13 +186,12 @@ def run_training(args):
     logging.info("Initialize data generator")
 
     # If tfds files need to be generated
-    if args.get_tfds:
+    if args.GET_TFDS:
         generate_tfds_files(
             args, maxatac_model, train_examples, validate_examples, model_config
         )
         logging.info("Generating tfds files completed!")
         sys.exit()
-
 
     # Specify max_que_size
     if args.max_queue_size:
@@ -202,7 +202,7 @@ def run_training(args):
         logging.info("Max Queue Size found: " + str(queue_size))
 
     # get tfds train and valid object
-    data_meta = pd.read_csv(args.tfds_meta, header=0, sep="\t")
+    data_meta = pd.read_csv(args.TFDS_META, header=0, sep="\t")
 
     # train data
     # atac
@@ -233,7 +233,7 @@ def run_training(args):
             chip_tfds.append(data)
 
     _chip_size = len(chip_tfds)
-    _chip_prob = 1.0 / (1.0 + float(args.ATAC_Sampling_Multiplier))
+    _chip_prob = 1.0 / (1.0 + float(args.ATAC_SAMPLING_MULTIPLIER))
     _atac_prob = 1.0 - _chip_prob
 
     # vstack
@@ -242,9 +242,10 @@ def run_training(args):
         for k in range(1, len(chip_tfds)):
             train_data_chip = train_data_chip.concatenate(chip_tfds[k])
 
-    # re-assign steps_per_epoch_v2 here
-    steps_per_epoch_v2 = int(train_data_chip.cardinality().numpy() // np.ceil(
-        (args.batch_size / (1.0 + float(args.ATAC_Sampling_Multiplier))))
+    # re-assign train_steps_per_epoch_v2 here
+    train_steps_per_epoch_v2 = int(
+        train_data_chip.cardinality().numpy()
+        // np.ceil((args.batch_size / (1.0 + float(args.ATAC_SAMPLING_MULTIPLIER))))
     )
 
     train_data = (
@@ -253,27 +254,42 @@ def run_training(args):
                 train_data_chip.cache()
                 .map(
                     map_func=dataset_mapping[args.SHUFFLE_AUGMENTATION],
-                    num_parallel_calls=tensorflow.data.AUTOTUNE,
+                    num_parallel_calls=args.threads
+                    if args.DETERMINISTIC
+                    else tensorflow.data.AUTOTUNE,
+                    deterministic=args.DETERMINISTIC,
                 )
-                .shuffle(train_data_chip.cardinality().numpy())
+                .shuffle(
+                    train_data_chip.cardinality().numpy(),
+                    seed=args.seed + 1 if args.DETERMINISTIC else None,
+                )
                 .repeat(args.epochs),
                 atac_tfds.cache()
                 .map(
                     map_func=dataset_mapping[args.SHUFFLE_AUGMENTATION],
-                    num_parallel_calls=tensorflow.data.AUTOTUNE,
+                    num_parallel_calls=args.threads
+                    if args.DETERMINISTIC
+                    else tensorflow.data.AUTOTUNE,
+                    deterministic=args.DETERMINISTIC,
                 )
-                .shuffle(atac_tfds.cardinality().numpy())
+                .shuffle(
+                    atac_tfds.cardinality().numpy(),
+                    seed=args.seed + 2 if args.DETERMINISTIC else None,
+                )
                 .repeat(args.epochs),
             ],
             weights=[_chip_prob, _atac_prob],
             stop_on_empty_dataset=False,
             rerandomize_each_iteration=False,
+            seed=args.seed + 3 if args.DETERMINISTIC else None,
         )
         .batch(
             batch_size=args.batch_size,
-            num_parallel_calls=tensorflow.data.AUTOTUNE,
+            num_parallel_calls=args.threads
+            if args.DETERMINISTIC
+            else tensorflow.data.AUTOTUNE,
             drop_remainder=True,
-            deterministic=False,
+            deterministic=args.DETERMINISTIC,
         )
         .prefetch(tensorflow.data.AUTOTUNE)
     )
@@ -295,14 +311,19 @@ def run_training(args):
             map_func=dataset_mapping["peak_centric"]
             if args.SHUFFLE_AUGMENTATION != "no_map"
             else dataset_mapping[args.SHUFFLE_AUGMENTATION],
-            num_parallel_calls=tensorflow.data.AUTOTUNE,
+            num_parallel_calls=args.threads
+            if args.DETERMINISTIC
+            else tensorflow.data.AUTOTUNE,
+            deterministic=args.DETERMINISTIC,
         )  # whether to use non-shuffle validation
         .repeat(args.epochs)
         .batch(
             batch_size=args.batch_size,
-            num_parallel_calls=tensorflow.data.AUTOTUNE,
+            num_parallel_calls=args.threads
+            if args.DETERMINISTIC
+            else tensorflow.data.AUTOTUNE,
             drop_remainder=True,
-            deterministic=False,
+            deterministic=args.DETERMINISTIC,
         )
         .prefetch(tensorflow.data.AUTOTUNE)
     )
@@ -313,28 +334,20 @@ def run_training(args):
         args,
         model_config,
         extra={
-            "training CHIP ROI total regions": train_examples.ROI_pool_CHIP.shape[
-                0
-            ],
-            "training ATAC ROI total regions": train_examples.ROI_pool_ATAC.shape[
-                0
-            ],
-            "validate CHIP ROI total regions": validate_examples.ROI_pool_CHIP.shape[
-                0
-            ],
-            "validate ATAC ROI total regions": validate_examples.ROI_pool_ATAC.shape[
-                0
-            ],
+            "training CHIP ROI total regions": train_examples.ROI_pool_CHIP.shape[0],
+            "training ATAC ROI total regions": train_examples.ROI_pool_ATAC.shape[0],
+            "validate CHIP ROI total regions": validate_examples.ROI_pool_CHIP.shape[0],
+            "validate ATAC ROI total regions": validate_examples.ROI_pool_ATAC.shape[0],
             "training CHIP ROI unique regions": train_examples.ROI_pool_unique_region_size_CHIP,
             "training ATAC ROI unique regions": train_examples.ROI_pool_unique_region_size_ATAC,
             "validate CHIP ROI unique regions": validate_examples.ROI_pool_unique_region_size_CHIP,
             "validate ATAC ROI unique regions": validate_examples.ROI_pool_unique_region_size_ATAC,
             "batch size": args.batch_size,
-            "training batches per epoch": steps_per_epoch_v2,
-            "validation batches per epoch": validation_steps_v2,
+            "train batches per epoch": train_steps_per_epoch_v2,
+            "valid batches per epoch": valid_steps_per_epoch_v2,
             "total epochs": args.epochs,
-            "ATAC_Sampling_Multiplier": args.ATAC_Sampling_Multiplier,
-            "CHIP_Sample_Weight_Baseline": args.CHIP_Sample_Weight_Baseline,
+            "ATAC_SAMPLING_MULTIPLIER": args.ATAC_SAMPLING_MULTIPLIER,
+            "CHIP_SAMPLE_WEIGHT_BASELINE": args.CHIP_SAMPLE_WEIGHT_BASELINE,
         },
     )
 
@@ -342,15 +355,15 @@ def run_training(args):
     training_history = maxatac_model.nn_model.fit(
         train_data,
         epochs=args.epochs,
-        steps_per_epoch=steps_per_epoch_v2,
+        steps_per_epoch=train_steps_per_epoch_v2,
         validation_data=valid_data,
-        validation_steps=validation_steps_v2,
+        validation_steps=valid_steps_per_epoch_v2,
         callbacks=get_callbacks(
             model_location=maxatac_model.results_location,
             log_location=maxatac_model.log_location,
             tensor_board_log_dir=maxatac_model.tensor_board_log_dir,
             monitor=TRAIN_MONITOR,
-            reduce_lr_on_plateau=args.reduce_lr_on_plateau,
+            reduce_lr_on_plateau=args.REDUCE_LR_ON_PLATEAU,
         ),
         max_queue_size=queue_size,
         use_multiprocessing=False,
