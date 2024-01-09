@@ -17,13 +17,13 @@ CONTROL_MD5_SUMS = {
     "average.bigwig": "d41d8cd98f00b204e9800998ecf8427e",
     "predict_signal_cell_GM12878.bigwig": "d41d8cd98f00b204e9800998ecf8427e",
     "train_sites_cell_A549_tf_CTCF.bigwig": "d41d8cd98f00b204e9800998ecf8427e",
-    "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed": "63c2fda65d6810d4194e92c8ea8e394d"
+    "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed": "63c2fda65d6810d4194e92c8ea8e394d",
 }
 
 
 def get_md5_sum(location, block_size=2**20):
     md5_sum = hashlib.md5()
-    with open(location , "rb") as input_stream:
+    with open(location, "rb") as input_stream:
         while True:
             buf = input_stream.read(block_size)
             if not buf:
@@ -38,4 +38,6 @@ def test_md5_sum():
         collected_md5_sums[filename] = get_md5_sum(location)
     for filename, control_md5_sum in CONTROL_MD5_SUMS.items():
         assert filename in collected_md5_sums, "missing input file for tests"
-        assert collected_md5_sums[filename] == control_md5_sum, "change input file for tests"
+        assert (
+            collected_md5_sums[filename] == control_md5_sum
+        ), "change input file for tests"

@@ -36,6 +36,8 @@ with Mute():
         dataset_mapping,
         update_model_config_from_args,
         generate_tfds_files,
+        get_tfds_data,
+        model_selection_v2
     )
     from maxatac.utilities.plot import (
         export_binary_metrics,
@@ -97,7 +99,6 @@ def run_training(args):
     startTime = timeit.default_timer()
 
     logging.info("Set up model parameters")
-
     # Read model config
     with open(args.model_config, "r") as f:
         model_config = json.load(f)
@@ -128,7 +129,6 @@ def run_training(args):
     )
 
     logging.info("Import training regions")
-
     # Import training regions
     train_examples = ROIPool(
         chroms=args.tchroms,
@@ -140,6 +140,7 @@ def run_training(args):
         tag="training",
     )
 
+    logging.info("Import validation regions")
     # Import validation regions
     validate_examples = ROIPool(
         chroms=args.vchroms,
@@ -183,10 +184,9 @@ def run_training(args):
             validate_examples.ROI_pool_CHIP
         )
 
-    logging.info("Initialize data generator")
-
     # If tfds files need to be generated
     if args.GET_TFDS:
+        logging.info("Initialize data generation")
         generate_tfds_files(
             args, maxatac_model, train_examples, validate_examples, model_config
         )
@@ -201,52 +201,24 @@ def run_training(args):
         queue_size = args.threads * 2
         logging.info("Max Queue Size found: " + str(queue_size))
 
+    logging.info("Loading data cache for training")
     # get tfds train and valid object
     data_meta = pd.read_csv(args.TFDS_META, header=0, sep="\t")
 
-    # train data
-    # atac
-    atac_tfds_file = data_meta[
-        (data_meta["train or valid"] == "train") & (data_meta["roi_type"] == "ATAC")
-    ]["path"].values[0]
-    atac_tfds = tensorflow.data.Dataset.load(
-        atac_tfds_file,
-        compression="GZIP",
-    )
-
-    # chip
-    chip_tfds = []
-    for cell_type, file_path in data_meta[
-        (data_meta["train or valid"] == "train") & (data_meta["roi_type"] == "CHIP")
-    ][["cell_type", "path"]].values:
-        if (
-            maxatac_model.meta_dataframe[
-                maxatac_model.meta_dataframe["Cell_Line"] == cell_type
-            ]["Train_Test_Label"].values[0]
-            == "Train"
-        ):
-            tfds = tensorflow.data.Dataset.load(
-                file_path,
-                compression="GZIP",
-            )
-            data = tfds
-            chip_tfds.append(data)
-
-    _chip_size = len(chip_tfds)
-    _chip_prob = 1.0 / (1.0 + float(args.ATAC_SAMPLING_MULTIPLIER))
-    _atac_prob = 1.0 - _chip_prob
-
-    # vstack
-    train_data_chip = chip_tfds[0]
-    if len(chip_tfds) > 1:
-        for k in range(1, len(chip_tfds)):
-            train_data_chip = train_data_chip.concatenate(chip_tfds[k])
+    train_data_atac = get_tfds_data(data_meta, maxatac_model, "train", "ATAC")
+    train_data_chip = get_tfds_data(data_meta, maxatac_model, "train", "CHIP")
+    valid_data_atac = get_tfds_data(data_meta, maxatac_model, "valid", "ATAC")
+    valid_data_chip = get_tfds_data(data_meta, maxatac_model, "valid", "CHIP")
+    valid_data_combined = valid_data_chip.concatenate(valid_data_atac)
+    # chip first to avoid positive sample truncation
 
     # re-assign train_steps_per_epoch_v2 here
     train_steps_per_epoch_v2 = int(
         train_data_chip.cardinality().numpy()
         // np.ceil((args.batch_size / (1.0 + float(args.ATAC_SAMPLING_MULTIPLIER))))
     )
+    _chip_prob = 1.0 / (1.0 + float(args.ATAC_SAMPLING_MULTIPLIER))
+    _atac_prob = 1.0 - _chip_prob
 
     train_data = (
         tensorflow.data.Dataset.sample_from_datasets(
@@ -264,7 +236,7 @@ def run_training(args):
                     seed=args.seed + 1 if args.DETERMINISTIC else None,
                 )
                 .repeat(args.epochs),
-                atac_tfds.cache()
+                train_data_atac.cache()
                 .map(
                     map_func=dataset_mapping[args.SHUFFLE_AUGMENTATION],
                     num_parallel_calls=args.threads
@@ -273,7 +245,7 @@ def run_training(args):
                     deterministic=args.DETERMINISTIC,
                 )
                 .shuffle(
-                    atac_tfds.cardinality().numpy(),
+                    train_data_atac.cardinality().numpy(),
                     seed=args.seed + 2 if args.DETERMINISTIC else None,
                 )
                 .repeat(args.epochs),
@@ -294,17 +266,10 @@ def run_training(args):
         .prefetch(tensorflow.data.AUTOTUNE)
     )
 
-    # valid data
-    valid_tfds_file = data_meta[data_meta["train or valid"] == "valid"]["path"].values[
-        0
-    ]
-    valid_tfds = tensorflow.data.Dataset.load(
-        valid_tfds_file,
-        compression="GZIP",
-    )
     valid_data = (
-        valid_tfds.take(
-            (validate_examples.ROI_pool.shape[0] // args.batch_size) * args.batch_size
+        valid_data_combined.take(
+            (valid_data_combined.cardinality().numpy() // args.batch_size)
+            * args.batch_size
         )
         .cache()
         .map(
@@ -328,16 +293,31 @@ def run_training(args):
         .prefetch(tensorflow.data.AUTOTUNE)
     )
 
+    logging.info("Logging meta info")
     # Save metadata
     save_metadata(
         args.output,
         args,
         model_config,
         extra={
-            "training CHIP ROI total regions": train_examples.ROI_pool_CHIP.shape[0],
-            "training ATAC ROI total regions": train_examples.ROI_pool_ATAC.shape[0],
-            "validate CHIP ROI total regions": validate_examples.ROI_pool_CHIP.shape[0],
-            "validate ATAC ROI total regions": validate_examples.ROI_pool_ATAC.shape[0],
+            "all listed cell types": maxatac_model.cell_types,
+            "training cell types": train_examples.used_cell_types,
+            "training CHIP ROI total regions": "{} | {}".format(
+                train_examples.ROI_pool_CHIP.shape[0],
+                train_data_chip.cardinality().numpy(),
+            ),
+            "training ATAC ROI total regions": "{} | {}".format(
+                train_examples.ROI_pool_ATAC.shape[0],
+                train_data_atac.cardinality().numpy(),
+            ),
+            "validate CHIP ROI total regions": "{} | {}".format(
+                validate_examples.ROI_pool_CHIP.shape[0],
+                valid_data_chip.cardinality().numpy(),
+            ),
+            "validate ATAC ROI total regions": "{} | {}".format(
+                validate_examples.ROI_pool_ATAC.shape[0],
+                valid_data_atac.cardinality().numpy(),
+            ),
             "training CHIP ROI unique regions": train_examples.ROI_pool_unique_region_size_CHIP,
             "training ATAC ROI unique regions": train_examples.ROI_pool_unique_region_size_ATAC,
             "validate CHIP ROI unique regions": validate_examples.ROI_pool_unique_region_size_CHIP,
@@ -351,6 +331,7 @@ def run_training(args):
         },
     )
 
+    logging.info("Start model fitting")
     # Fit the model
     training_history = maxatac_model.nn_model.fit(
         train_data,
@@ -374,7 +355,7 @@ def run_training(args):
     logging.info("Plot and save results")
 
     # Select best model
-    best_epoch = model_selection(
+    best_epoch = model_selection_v2(
         training_history=training_history, output_dir=maxatac_model.output_directory
     )
 

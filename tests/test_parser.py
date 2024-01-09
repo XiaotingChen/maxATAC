@@ -2,10 +2,7 @@ import pytest
 import os
 
 from maxatac.utilities.system_tools import get_files
-from maxatac.utilities.parser import (
-    get_synced_chroms,
-    parse_arguments
-)
+from maxatac.utilities.parser import get_synced_chroms, parse_arguments
 
 
 DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
@@ -17,13 +14,9 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
         #  correct inputs without regions
         (
             [],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             None,
-            {}
+            {},
         ),
         (
             [],
@@ -31,20 +24,16 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             None,
-            {}
+            {},
         ),
         (
             ["chr1"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1"],
@@ -52,20 +41,33 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            False,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1"],
             [
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "average.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            True,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1"],
@@ -73,43 +75,17 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
-        (
-            ["chr1"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        
         #  correct inputs with regions
         (
             ["chr1:10-100"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             None,
-            {"chr1": {"length": 249250621, "region": [10, 100]}}
+            {"chr1": {"length": 249250621, "region": [10, 100]}},
         ),
         (
             ["chr1:10-100"],
@@ -117,41 +93,16 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             None,
-            {"chr1": {"length": 249250621, "region": [10, 100]}}
+            {"chr1": {"length": 249250621, "region": [10, 100]}},
         ),
         (
             ["chr1:10-100"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             False,
-            {"chr1": {"length": 249250621, "region": [10, 100]}}
-        ),
-        (
-            ["chr1:10-100"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            False,
-            {"chr1": {"length": 249250621, "region": [10, 100]}}
-        ),
-        (
-            ["chr1:10-100"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
-            True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [10, 100]}},
         ),
         (
             ["chr1:10-100"],
@@ -159,41 +110,33 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:0-249250621"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
-            None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:0-249250621"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:0-249250621"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [10, 100]}},
+        ),
+        (
+            ["chr1:10-100"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            True,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:10-100"],
+            [
+                "hg19.2bit",
+                "predict_signal_cell_GM12878.bigwig",
+                "average.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+            ],
+            True,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:0-249250621"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            None,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:0-249250621"],
@@ -201,41 +144,50 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:0-249250621"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
-            True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:0-249250621"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:10-249250621"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             None,
-            {"chr1": {"length": 249250621, "region": [10, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:0-249250621"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            False,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:0-249250621"],
+            [
+                "hg19.2bit",
+                "predict_signal_cell_GM12878.bigwig",
+                "average.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+            ],
+            False,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:0-249250621"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            True,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:0-249250621"],
+            [
+                "hg19.2bit",
+                "predict_signal_cell_GM12878.bigwig",
+                "average.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+            ],
+            True,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:10-249250621"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            None,
+            {"chr1": {"length": 249250621, "region": [10, 249250621]}},
         ),
         (
             ["chr1:10-249250621"],
@@ -243,20 +195,16 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             None,
-            {"chr1": {"length": 249250621, "region": [10, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [10, 249250621]}},
         ),
         (
             ["chr1:10-249250621"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             False,
-            {"chr1": {"length": 249250621, "region": [10, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [10, 249250621]}},
         ),
         (
             ["chr1:10-249250621"],
@@ -264,20 +212,16 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             False,
-            {"chr1": {"length": 249250621, "region": [10, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [10, 249250621]}},
         ),
         (
             ["chr1:10-249250621"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:10-249250621"],
@@ -285,22 +229,34 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
-
         #  not correct inputs without regions
         (
             ["chrA"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            None,
+            {},
+        ),
+        (
+            ["chrA"],
             [
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "average.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             None,
-            {}
+            {},
+        ),
+        (
+            ["chrA"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            False,
+            {},
         ),
         (
             ["chrA"],
@@ -308,20 +264,16 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            None,
-            {}
-        ),
-        (
-            ["chrA"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             False,
-            {}
+            {},
+        ),
+        (
+            ["chrA"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            True,
+            {},
         ),
         (
             ["chrA"],
@@ -329,43 +281,17 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            False,
-            {}
-        ),
-        (
-            ["chrA"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             True,
-            {}
+            {},
         ),
-        (
-            ["chrA"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            True,
-            {}
-        ),
-
         #  not correct inputs with regions
         (
             ["chr1:"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:"],
@@ -373,41 +299,16 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
-            True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:"],
@@ -415,41 +316,33 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
+            False,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
-            ["chr1:0-"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
-            None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:0-"],
+            ["chr1:"],
             [
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
-            None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            True,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:0-"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
-            False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            None,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:0-"],
@@ -457,20 +350,33 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
+            None,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:0-"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:0-"],
             [
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "average.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
+            False,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:0-"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:0-"],
@@ -478,41 +384,16 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:-100-100"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:-100-100"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:-100-100"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
-            False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:-100-100"],
@@ -520,20 +401,33 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
+            None,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:-100-100"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:-100-100"],
             [
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "average.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
+            False,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:-100-100"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:-100-100"],
@@ -541,41 +435,16 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:100-10"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:100-10"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:100-10"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
-            False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:100-10"],
@@ -583,20 +452,33 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
+            None,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:100-10"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:100-10"],
             [
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "average.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
+            False,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:100-10"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:100-10"],
@@ -604,41 +486,16 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:0-500000000"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:0-500000000"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:0-500000000"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
-            False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:0-500000000"],
@@ -646,20 +503,33 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
+            None,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:0-500000000"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),        
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
         (
             ["chr1:0-500000000"],
             [
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "average.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
+            False,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:0-500000000"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
             True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:0-500000000"],
@@ -667,20 +537,33 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:0-0"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            None,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:0-0"],
             [
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "average.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:0-0"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            False,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
             ["chr1:0-0"],
@@ -688,117 +571,79 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+            ],
+            False,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:0-0"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            True,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:0-0"],
+            [
+                "hg19.2bit",
+                "predict_signal_cell_GM12878.bigwig",
+                "average.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+            ],
+            True,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:10-10"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            None,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:10-10"],
+            [
+                "hg19.2bit",
+                "predict_signal_cell_GM12878.bigwig",
+                "average.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
-            ["chr1:0-0"],
+            ["chr1:10-10"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            False,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:10-10"],
             [
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "average.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
         (
-            ["chr1:0-0"],
+            ["chr1:10-10"],
+            ["hg19.2bit", "predict_signal_cell_GM12878.bigwig", "average.bigwig"],
+            True,
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
+        ),
+        (
+            ["chr1:10-10"],
             [
                 "hg19.2bit",
                 "predict_signal_cell_GM12878.bigwig",
                 "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:0-0"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
+            {"chr1": {"length": 249250621, "region": [0, 249250621]}},
         ),
-        (
-            ["chr1:0-0"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:10-10"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
-            None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:10-10"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            None,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:10-10"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
-            False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:10-10"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            False,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:10-10"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig"
-            ],
-            True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-        (
-            ["chr1:10-10"],
-            [
-                "hg19.2bit",
-                "predict_signal_cell_GM12878.bigwig",
-                "average.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            True,
-            {"chr1": {"length": 249250621, "region": [0, 249250621]}}
-        ),
-
         # combination of mutiple files
         (
             ["chr1"],
@@ -806,10 +651,10 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "hg19.2bit",
                 "average.bigwig",
                 "train_signal_cell_A549.bigwig",
-                "train_sites_cell_A549_tf_CTCF.bigwig"
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ],
             None,
-            {}
+            {},
         ),
         (
             ["chr1"],
@@ -818,21 +663,10 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "average.bigwig",
                 "train_signal_cell_A549.bigwig",
                 "train_sites_cell_A549_tf_CTCF.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             None,
-            {}
-        ),
-        (
-            ["chr2"],
-            [
-                "hg19.2bit",
-                "average.bigwig",
-                "train_signal_cell_A549.bigwig",
-                "train_sites_cell_A549_tf_CTCF.bigwig"
-            ],
-            None,
-            {"chr2": {"length": 243199373, "region": [0, 243199373]}}
+            {},
         ),
         (
             ["chr2"],
@@ -841,53 +675,21 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "average.bigwig",
                 "train_signal_cell_A549.bigwig",
                 "train_sites_cell_A549_tf_CTCF.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
             ],
             None,
-            {"chr2": {"length": 243199373, "region": [0, 243199373]}}
+            {"chr2": {"length": 243199373, "region": [0, 243199373]}},
         ),
         (
-            ["chr2", "chr3:10-100"],
-            [
-                "hg19.2bit",
-                "average.bigwig",
-                "train_signal_cell_A549.bigwig",
-                "train_sites_cell_A549_tf_CTCF.bigwig"
-            ],
-            None,
-            {
-                "chr2": {"length": 243199373, "region": [0, 243199373]},
-                "chr3": {"length": 198022430, "region": [10, 100]}
-            }
-        ),
-        (
-            ["chr2", "chr3:10-100"],
+            ["chr2"],
             [
                 "hg19.2bit",
                 "average.bigwig",
                 "train_signal_cell_A549.bigwig",
                 "train_sites_cell_A549_tf_CTCF.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
             None,
-            {
-                "chr2": {"length": 243199373, "region": [0, 243199373]},
-                "chr3": {"length": 198022430, "region": [10, 100]}
-            }
-        ),
-        (
-            ["chr2", "chr3:10-100"],
-            [
-                "hg19.2bit",
-                "average.bigwig",
-                "train_signal_cell_A549.bigwig",
-                "train_sites_cell_A549_tf_CTCF.bigwig"
-            ],
-            True,
-            {
-                "chr2": {"length": 243199373, "region": [0, 243199373]},
-                "chr3": {"length": 198022430, "region": [0, 198022430]}
-            }
+            {"chr2": {"length": 243199373, "region": [0, 243199373]}},
         ),
         (
             ["chr2", "chr3:10-100"],
@@ -896,27 +698,56 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "average.bigwig",
                 "train_signal_cell_A549.bigwig",
                 "train_sites_cell_A549_tf_CTCF.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
-            ],
-            True,
-            {
-                "chr2": {"length": 243199373, "region": [0, 243199373]},
-                "chr3": {"length": 198022430, "region": [0, 198022430]}
-            }
-        ),
-        (
-            ["chr1", "chr2", "chr3:10-100"],
-            [
-                "hg19.2bit",
-                "average.bigwig",
-                "train_signal_cell_A549.bigwig",
-                "train_sites_cell_A549_tf_CTCF.bigwig"
             ],
             None,
             {
                 "chr2": {"length": 243199373, "region": [0, 243199373]},
-                "chr3": {"length": 198022430, "region": [10, 100]}
-            }
+                "chr3": {"length": 198022430, "region": [10, 100]},
+            },
+        ),
+        (
+            ["chr2", "chr3:10-100"],
+            [
+                "hg19.2bit",
+                "average.bigwig",
+                "train_signal_cell_A549.bigwig",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+            ],
+            None,
+            {
+                "chr2": {"length": 243199373, "region": [0, 243199373]},
+                "chr3": {"length": 198022430, "region": [10, 100]},
+            },
+        ),
+        (
+            ["chr2", "chr3:10-100"],
+            [
+                "hg19.2bit",
+                "average.bigwig",
+                "train_signal_cell_A549.bigwig",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+            ],
+            True,
+            {
+                "chr2": {"length": 243199373, "region": [0, 243199373]},
+                "chr3": {"length": 198022430, "region": [0, 198022430]},
+            },
+        ),
+        (
+            ["chr2", "chr3:10-100"],
+            [
+                "hg19.2bit",
+                "average.bigwig",
+                "train_signal_cell_A549.bigwig",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+            ],
+            True,
+            {
+                "chr2": {"length": 243199373, "region": [0, 243199373]},
+                "chr3": {"length": 198022430, "region": [0, 198022430]},
+            },
         ),
         (
             ["chr1", "chr2", "chr3:10-100"],
@@ -925,27 +756,12 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "average.bigwig",
                 "train_signal_cell_A549.bigwig",
                 "train_sites_cell_A549_tf_CTCF.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
             ],
             None,
             {
                 "chr2": {"length": 243199373, "region": [0, 243199373]},
-                "chr3": {"length": 198022430, "region": [10, 100]}
-            }
-        ),
-        (
-            ["chr1", "chr2", "chr3:10-100"],
-            [
-                "hg19.2bit",
-                "average.bigwig",
-                "train_signal_cell_A549.bigwig",
-                "train_sites_cell_A549_tf_CTCF.bigwig"
-            ],
-            True,
-            {
-                "chr2": {"length": 243199373, "region": [0, 243199373]},
-                "chr3": {"length": 198022430, "region": [0, 198022430]}
-            }
+                "chr3": {"length": 198022430, "region": [10, 100]},
+            },
         ),
         (
             ["chr1", "chr2", "chr3:10-100"],
@@ -954,42 +770,61 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "average.bigwig",
                 "train_signal_cell_A549.bigwig",
                 "train_sites_cell_A549_tf_CTCF.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+            ],
+            None,
+            {
+                "chr2": {"length": 243199373, "region": [0, 243199373]},
+                "chr3": {"length": 198022430, "region": [10, 100]},
+            },
+        ),
+        (
+            ["chr1", "chr2", "chr3:10-100"],
+            [
+                "hg19.2bit",
+                "average.bigwig",
+                "train_signal_cell_A549.bigwig",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ],
             True,
             {
                 "chr2": {"length": 243199373, "region": [0, 243199373]},
-                "chr3": {"length": 198022430, "region": [0, 198022430]}
-            }
+                "chr3": {"length": 198022430, "region": [0, 198022430]},
+            },
         ),
         (
-            ["chr1"],
+            ["chr1", "chr2", "chr3:10-100"],
             [
-                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
-                "train_sites_cell_A549_tf_CTCF.bigwig"
-            ],
-            None,
-            {}
-        ),
-        (
-            ["chr1"],
-            [
-                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
+                "hg19.2bit",
+                "average.bigwig",
+                "train_signal_cell_A549.bigwig",
                 "train_sites_cell_A549_tf_CTCF.bigwig",
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
             ],
-            None,
-            {}
+            True,
+            {
+                "chr2": {"length": 243199373, "region": [0, 243199373]},
+                "chr3": {"length": 198022430, "region": [0, 198022430]},
+            },
         ),
         (
             ["chr1"],
             [
                 "validate_sites_cell_HCT116_tf_CTCF.bigwig",
                 "train_sites_cell_A549_tf_CTCF.bigwig",
-                None
             ],
             None,
-            {}
+            {},
+        ),
+        (
+            ["chr1"],
+            [
+                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+            ],
+            None,
+            {},
         ),
         (
             ["chr1"],
@@ -997,15 +832,29 @@ DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "temp"))
                 "validate_sites_cell_HCT116_tf_CTCF.bigwig",
                 "train_sites_cell_A549_tf_CTCF.bigwig",
                 None,
-                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed"
             ],
             None,
-            {}
-        )
-    ]
+            {},
+        ),
+        (
+            ["chr1"],
+            [
+                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                None,
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+            ],
+            None,
+            {},
+        ),
+    ],
 )
 def test_get_synced_chroms(chroms, filenames, ignore_regions, control_synced_chroms):
-    locations = list(get_files(DATA_FOLDER, "|".join([f for f in filenames if f is not None])).values())
+    locations = list(
+        get_files(
+            DATA_FOLDER, "|".join([f for f in filenames if f is not None])
+        ).values()
+    )
     locations += [f for f in filenames if f is None]
     synced_chroms = get_synced_chroms(chroms, locations, ignore_regions)
     assert synced_chroms == control_synced_chroms
@@ -1013,231 +862,493 @@ def test_get_synced_chroms(chroms, filenames, ignore_regions, control_synced_chr
 
 # For not direct testing of assert_and_fix_args_for_training
 
+
 @pytest.mark.parametrize(
     "args, control_args",
     [
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr1", "chr2", "chr3", "chr10", "chr11", "chr8", "chr21",
-                "--tchroms", "chr1", "chr10", "chr11",
-                "--vchroms", "chr2", "chr8", "chr21",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "validate_sites_cell_HCT116_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr1",
+                "chr2",
+                "chr3",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr21",
+                "--tchroms",
+                "chr1",
+                "chr10",
+                "chr11",
+                "--vchroms",
+                "chr2",
+                "chr8",
+                "chr21",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
             ],
             {
                 "chroms": {
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
                     "chr11": {"length": 135006516, "region": [0, 135006516]},
                     "chr8": {"length": 146364022, "region": [0, 146364022]},
-                    "chr21": {"length": 48129895, "region": [0, 48129895]}
+                    "chr21": {"length": 48129895, "region": [0, 48129895]},
                 },
                 "tchroms": {
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr11": {"length": 135006516, "region": [0, 135006516]}
+                    "chr11": {"length": 135006516, "region": [0, 135006516]},
                 },
                 "vchroms": {
                     "chr8": {"length": 146364022, "region": [0, 146364022]},
-                    "chr21": {"length": 48129895, "region": [0, 48129895]}
-                }
-            }
+                    "chr21": {"length": 48129895, "region": [0, 48129895]},
+                },
+            },
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--preferences", "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr1", "chr2", "chr3", "chr10", "chr11", "chr8", "chr21",
-                "--tchroms", "chr1", "chr10", "chr11",
-                "--vchroms", "chr2", "chr8", "chr21",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "validate_sites_cell_HCT116_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--preferences",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr1",
+                "chr2",
+                "chr3",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr21",
+                "--tchroms",
+                "chr1",
+                "chr10",
+                "chr11",
+                "--vchroms",
+                "chr2",
+                "chr8",
+                "chr21",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
             ],
             {
                 "chroms": {
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
                     "chr11": {"length": 135006516, "region": [0, 135006516]},
                     "chr8": {"length": 146364022, "region": [0, 146364022]},
-                    "chr21": {"length": 48129895, "region": [0, 48129895]}
+                    "chr21": {"length": 48129895, "region": [0, 48129895]},
                 },
                 "tchroms": {
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr11": {"length": 135006516, "region": [0, 135006516]}
+                    "chr11": {"length": 135006516, "region": [0, 135006516]},
                 },
                 "vchroms": {
                     "chr8": {"length": 146364022, "region": [0, 146364022]},
-                    "chr21": {"length": 48129895, "region": [0, 48129895]}
-                }
-            }
+                    "chr21": {"length": 48129895, "region": [0, 48129895]},
+                },
+            },
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr1", "chr2", "chr3", "chr10", "chr11", "chr8", "chr21",
-                "--tchroms", "chr10",
-                "--vchroms", "chr8",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "validate_sites_cell_HCT116_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr1",
+                "chr2",
+                "chr3",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr21",
+                "--tchroms",
+                "chr10",
+                "--vchroms",
+                "chr8",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
             ],
             {
                 "chroms": {
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr8": {"length": 146364022, "region": [0, 146364022]}
+                    "chr8": {"length": 146364022, "region": [0, 146364022]},
                 },
-                "tchroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]}
-                },
-                "vchroms": {
-                    "chr8": {"length": 146364022, "region": [0, 146364022]}
-                }
-            }
+                "tchroms": {"chr10": {"length": 135534747, "region": [0, 135534747]}},
+                "vchroms": {"chr8": {"length": 146364022, "region": [0, 146364022]}},
+            },
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--preferences", "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr1", "chr2", "chr3", "chr10", "chr11", "chr8", "chr21",
-                "--tchroms", "chr10",
-                "--vchroms", "chr8",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "validate_sites_cell_HCT116_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--preferences",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr1",
+                "chr2",
+                "chr3",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr21",
+                "--tchroms",
+                "chr10",
+                "--vchroms",
+                "chr8",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
             ],
             {
                 "chroms": {
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr8": {"length": 146364022, "region": [0, 146364022]}
+                    "chr8": {"length": 146364022, "region": [0, 146364022]},
                 },
-                "tchroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]}
-                },
-                "vchroms": {
-                    "chr8": {"length": 146364022, "region": [0, 146364022]}
-                }
-            }
+                "tchroms": {"chr10": {"length": 135534747, "region": [0, 135534747]}},
+                "vchroms": {"chr8": {"length": 146364022, "region": [0, 146364022]}},
+            },
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr1", "chr2", "chr3", "chr10", "chr11", "chr8", "chr21",
-                "--vchroms", "chr8",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "validate_sites_cell_HCT116_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr1",
+                "chr2",
+                "chr3",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr21",
+                "--vchroms",
+                "chr8",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
+            ],
+            {
+                "chroms": {"chr8": {"length": 146364022, "region": [0, 146364022]}},
+                "tchroms": {},
+                "vchroms": {"chr8": {"length": 146364022, "region": [0, 146364022]}},
+            },
+        ),
+        (
+            [
+                "train",
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--preferences",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr1",
+                "chr2",
+                "chr3",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr21",
+                "--vchroms",
+                "chr8",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
+            ],
+            {
+                "chroms": {"chr8": {"length": 146364022, "region": [0, 146364022]}},
+                "tchroms": {},
+                "vchroms": {"chr8": {"length": 146364022, "region": [0, 146364022]}},
+            },
+        ),
+        (
+            [
+                "train",
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--sequence",
+                "hg19.2bit",
+                "--tchroms",
+                "chr10",
+                "--vchroms",
+                "chr8",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
             ],
             {
                 "chroms": {
-                    "chr8": {"length": 146364022, "region": [0, 146364022]}
+                    "chr10": {"length": 135534747, "region": [0, 135534747]},
+                    "chr8": {"length": 146364022, "region": [0, 146364022]},
+                },
+                "tchroms": {"chr10": {"length": 135534747, "region": [0, 135534747]}},
+                "vchroms": {"chr8": {"length": 146364022, "region": [0, 146364022]}},
+            },
+        ),
+        (
+            [
+                "train",
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--preferences",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+                "--sequence",
+                "hg19.2bit",
+                "--tchroms",
+                "chr10",
+                "--vchroms",
+                "chr8",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
+            ],
+            {
+                "chroms": {
+                    "chr10": {"length": 135534747, "region": [0, 135534747]},
+                    "chr8": {"length": 146364022, "region": [0, 146364022]},
+                },
+                "tchroms": {"chr10": {"length": 135534747, "region": [0, 135534747]}},
+                "vchroms": {"chr8": {"length": 146364022, "region": [0, 146364022]}},
+            },
+        ),
+        (
+            [
+                "train",
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr2",
+                "chr3",
+                "chr1",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tchroms",
+                "chr1",
+                "chr10",
+                "chr11",
+                "--vchroms",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+            ],
+            {
+                "chroms": {
+                    "chr2": {"length": 243199373, "region": [0, 243199373]},
+                    "chr3": {"length": 198022430, "region": [0, 198022430]},
+                    "chr10": {"length": 135534747, "region": [0, 135534747]},
+                    "chr11": {"length": 135006516, "region": [0, 135006516]},
+                    "chr12": {"length": 133851895, "region": [0, 133851895]},
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
+                },
+                "tchroms": {
+                    "chr10": {"length": 135534747, "region": [0, 135534747]},
+                    "chr11": {"length": 135006516, "region": [0, 135006516]},
+                },
+                "vchroms": {
+                    "chr12": {"length": 133851895, "region": [0, 133851895]},
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
+                },
+            },
+        ),
+        (
+            [
+                "train",
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--preferences",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr2",
+                "chr3",
+                "chr1",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tchroms",
+                "chr1",
+                "chr10",
+                "chr11",
+                "--vchroms",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+            ],
+            {
+                "chroms": {
+                    "chr2": {"length": 243199373, "region": [0, 243199373]},
+                    "chr3": {"length": 198022430, "region": [0, 198022430]},
+                    "chr10": {"length": 135534747, "region": [0, 135534747]},
+                    "chr11": {"length": 135006516, "region": [0, 135006516]},
+                    "chr12": {"length": 133851895, "region": [0, 133851895]},
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
+                },
+                "tchroms": {
+                    "chr10": {"length": 135534747, "region": [0, 135534747]},
+                    "chr11": {"length": 135006516, "region": [0, 135006516]},
+                },
+                "vchroms": {
+                    "chr12": {"length": 133851895, "region": [0, 133851895]},
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
+                },
+            },
+        ),
+        (
+            [
+                "train",
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr2",
+                "chr3",
+                "chr1",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--vchroms",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+            ],
+            {
+                "chroms": {
+                    "chr2": {"length": 243199373, "region": [0, 243199373]},
+                    "chr3": {"length": 198022430, "region": [0, 198022430]},
+                    "chr10": {"length": 135534747, "region": [0, 135534747]},
+                    "chr11": {"length": 135006516, "region": [0, 135006516]},
+                    "chr12": {"length": 133851895, "region": [0, 133851895]},
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
                 },
                 "tchroms": {},
                 "vchroms": {
-                    "chr8": {"length": 146364022, "region": [0, 146364022]}
-                }
-            }
+                    "chr12": {"length": 133851895, "region": [0, 133851895]},
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
+                },
+            },
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--preferences", "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr1", "chr2", "chr3", "chr10", "chr11", "chr8", "chr21",
-                "--vchroms", "chr8",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "validate_sites_cell_HCT116_tf_CTCF.bigwig"
-            ],
-            {
-                "chroms": {
-                    "chr8": {"length": 146364022, "region": [0, 146364022]}
-                },
-                "tchroms": {},
-                "vchroms": {
-                    "chr8": {"length": 146364022, "region": [0, 146364022]}
-                }
-            }
-        ),
-        (
-            [
-                "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--sequence", "hg19.2bit",
-                "--tchroms", "chr10",
-                "--vchroms", "chr8",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "validate_sites_cell_HCT116_tf_CTCF.bigwig"
-            ],
-            {
-                "chroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr8": {"length": 146364022, "region": [0, 146364022]}
-                },
-                "tchroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]}
-                },
-                "vchroms": {
-                    "chr8": {"length": 146364022, "region": [0, 146364022]}
-                }
-            }
-        ),
-        (
-            [
-                "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--preferences", "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
-                "--sequence", "hg19.2bit",
-                "--tchroms", "chr10",
-                "--vchroms", "chr8",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "validate_sites_cell_HCT116_tf_CTCF.bigwig"
-            ],
-            {
-                "chroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr8": {"length": 146364022, "region": [0, 146364022]}
-                },
-                "tchroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]}
-                },
-                "vchroms": {
-                    "chr8": {"length": 146364022, "region": [0, 146364022]}
-                }
-            }
-        ),
-        (
-            [
-                "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr2", "chr3", "chr1", "chr10", "chr11", "chr8", "chr12", "chr13",
-                "--tchroms", "chr1", "chr10", "chr11",
-                "--vchroms", "chr8", "chr12", "chr13",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--preferences",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr2",
+                "chr3",
+                "chr1",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--vchroms",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ],
             {
                 "chroms": {
@@ -1246,91 +1357,49 @@ def test_get_synced_chroms(chroms, filenames, ignore_regions, control_synced_chr
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
                     "chr11": {"length": 135006516, "region": [0, 135006516]},
                     "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
-                },
-                "tchroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr11": {"length": 135006516, "region": [0, 135006516]}
-                },
-                "vchroms": {
-                    "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
-                }
-            }
-        ),
-        (
-            [
-                "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--preferences", "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr2", "chr3", "chr1", "chr10", "chr11", "chr8", "chr12", "chr13",
-                "--tchroms", "chr1", "chr10", "chr11",
-                "--vchroms", "chr8", "chr12", "chr13",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
-            ],
-            {
-                "chroms": {
-                    "chr2": {"length": 243199373, "region": [0, 243199373]},
-                    "chr3": {"length": 198022430, "region": [0, 198022430]},
-                    "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr11": {"length": 135006516, "region": [0, 135006516]},
-                    "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
-                },
-                "tchroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr11": {"length": 135006516, "region": [0, 135006516]}
-                },
-                "vchroms": {
-                    "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
-                }
-            }
-        ),
-        (
-            [
-                "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr2", "chr3", "chr1", "chr10", "chr11", "chr8", "chr12", "chr13",
-                "--vchroms", "chr8", "chr12", "chr13",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
-            ],
-            {
-                "chroms": {
-                    "chr2": {"length": 243199373, "region": [0, 243199373]},
-                    "chr3": {"length": 198022430, "region": [0, 198022430]},
-                    "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr11": {"length": 135006516, "region": [0, 135006516]},
-                    "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
                 },
                 "tchroms": {},
                 "vchroms": {
                     "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
-                }
-            }
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
+                },
+            },
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--preferences", "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr2", "chr3", "chr1", "chr10", "chr11", "chr8", "chr12", "chr13",
-                "--vchroms", "chr8", "chr12", "chr13",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--sequence",
+                "hg19.2bit",
+                "--filters",
+                "average.bigwig",
+                "--chroms",
+                "chr2",
+                "chr3",
+                "chr1",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tchroms",
+                "chr1",
+                "chr10",
+                "chr11",
+                "--vchroms",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ],
             {
                 "chroms": {
@@ -1339,28 +1408,54 @@ def test_get_synced_chroms(chroms, filenames, ignore_regions, control_synced_chr
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
                     "chr11": {"length": 135006516, "region": [0, 135006516]},
                     "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
                 },
-                "tchroms": {},
+                "tchroms": {
+                    "chr10": {"length": 135534747, "region": [0, 135534747]},
+                    "chr11": {"length": 135006516, "region": [0, 135006516]},
+                },
                 "vchroms": {
                     "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
-                }
-            }
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
+                },
+            },
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--sequence", "hg19.2bit",
-                "--filters", "average.bigwig",
-                "--chroms", "chr2", "chr3", "chr1", "chr10", "chr11", "chr8", "chr12", "chr13",
-                "--tchroms", "chr1", "chr10", "chr11",
-                "--vchroms", "chr8", "chr12", "chr13",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--preferences",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+                "--sequence",
+                "hg19.2bit",
+                "--filters",
+                "average.bigwig",
+                "--chroms",
+                "chr2",
+                "chr3",
+                "chr1",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tchroms",
+                "chr1",
+                "chr10",
+                "chr11",
+                "--vchroms",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ],
             {
                 "chroms": {
@@ -1369,32 +1464,52 @@ def test_get_synced_chroms(chroms, filenames, ignore_regions, control_synced_chr
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
                     "chr11": {"length": 135006516, "region": [0, 135006516]},
                     "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
                 },
                 "tchroms": {
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr11": {"length": 135006516, "region": [0, 135006516]}
+                    "chr11": {"length": 135006516, "region": [0, 135006516]},
                 },
                 "vchroms": {
                     "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
-                }
-            }
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
+                },
+            },
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--preferences", "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
-                "--sequence", "hg19.2bit",
-                "--filters", "average.bigwig",
-                "--chroms", "chr2", "chr3", "chr1", "chr10", "chr11", "chr8", "chr12", "chr13",
-                "--tchroms", "chr1", "chr10", "chr11",
-                "--vchroms", "chr8", "chr12", "chr13",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--sequence",
+                "hg19.2bit",
+                "--filters",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--chroms",
+                "chr2",
+                "chr3",
+                "chr1",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tchroms",
+                "chr1",
+                "chr10",
+                "chr11",
+                "--vchroms",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ],
             {
                 "chroms": {
@@ -1403,31 +1518,54 @@ def test_get_synced_chroms(chroms, filenames, ignore_regions, control_synced_chr
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
                     "chr11": {"length": 135006516, "region": [0, 135006516]},
                     "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
                 },
                 "tchroms": {
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr11": {"length": 135006516, "region": [0, 135006516]}
+                    "chr11": {"length": 135006516, "region": [0, 135006516]},
                 },
                 "vchroms": {
                     "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
-                }
-            }
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
+                },
+            },
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--sequence", "hg19.2bit",
-                "--filters", "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--chroms", "chr2", "chr3", "chr1", "chr10", "chr11", "chr8", "chr12", "chr13",
-                "--tchroms", "chr1", "chr10", "chr11",
-                "--vchroms", "chr8", "chr12", "chr13",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--preferences",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+                "--sequence",
+                "hg19.2bit",
+                "--filters",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--chroms",
+                "chr2",
+                "chr3",
+                "chr1",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tchroms",
+                "chr1",
+                "chr10",
+                "chr11",
+                "--vchroms",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ],
             {
                 "chroms": {
@@ -1436,107 +1574,89 @@ def test_get_synced_chroms(chroms, filenames, ignore_regions, control_synced_chr
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
                     "chr11": {"length": 135006516, "region": [0, 135006516]},
                     "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
                 },
                 "tchroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr11": {"length": 135006516, "region": [0, 135006516]}
-                },
-                "vchroms": {
-                    "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
-                }
-            }
-        ),
-        (
-            [
-                "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--preferences", "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
-                "--sequence", "hg19.2bit",
-                "--filters", "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--chroms", "chr2", "chr3", "chr1", "chr10", "chr11", "chr8", "chr12", "chr13",
-                "--tchroms", "chr1", "chr10", "chr11",
-                "--vchroms", "chr8", "chr12", "chr13",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
-            ],
-            {
-                "chroms": {
-                    "chr2": {"length": 243199373, "region": [0, 243199373]},
-                    "chr3": {"length": 198022430, "region": [0, 198022430]},
                     "chr10": {"length": 135534747, "region": [0, 135534747]},
                     "chr11": {"length": 135006516, "region": [0, 135006516]},
-                    "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
-                },
-                "tchroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]},
-                    "chr11": {"length": 135006516, "region": [0, 135006516]}
                 },
                 "vchroms": {
                     "chr12": {"length": 133851895, "region": [0, 133851895]},
-                    "chr13": {"length": 115169878, "region": [0, 115169878]}
-                }
-            }
+                    "chr13": {"length": 115169878, "region": [0, 115169878]},
+                },
+            },
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--sequence", "hg19.2bit",
-                "--filters", "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--tchroms", "chr10",
-                "--vchroms", "chr8",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "validate_sites_cell_HCT116_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--sequence",
+                "hg19.2bit",
+                "--filters",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--tchroms",
+                "chr10",
+                "--vchroms",
+                "chr8",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
             ],
             {
-                "chroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]}
-                },
-                "tchroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]}
-                },
-                "vchroms": {}
-            }
+                "chroms": {"chr10": {"length": 135534747, "region": [0, 135534747]}},
+                "tchroms": {"chr10": {"length": 135534747, "region": [0, 135534747]}},
+                "vchroms": {},
+            },
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--preferences", "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
-                "--sequence", "hg19.2bit",
-                "--filters", "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--tchroms", "chr10",
-                "--vchroms", "chr8",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "validate_sites_cell_HCT116_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--preferences",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+                "--sequence",
+                "hg19.2bit",
+                "--filters",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--tchroms",
+                "chr10",
+                "--vchroms",
+                "chr8",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "validate_sites_cell_HCT116_tf_CTCF.bigwig",
             ],
             {
-                "chroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]}
-                },
-                "tchroms": {
-                    "chr10": {"length": 135534747, "region": [0, 135534747]}
-                },
-                "vchroms": {}
-            }
-        )
-    ]
+                "chroms": {"chr10": {"length": 135534747, "region": [0, 135534747]}},
+                "tchroms": {"chr10": {"length": 135534747, "region": [0, 135534747]}},
+                "vchroms": {},
+            },
+        ),
+    ],
 )
 def test_parse_chromosome_arguments_for_training(args, control_args):
     args = parse_arguments(args, DATA_FOLDER)
-    assert args.chroms == control_args["chroms"] and args.tchroms == control_args["tchroms"] and args.vchroms == control_args["vchroms"]
+    assert (
+        args.chroms == control_args["chroms"]
+        and args.tchroms == control_args["tchroms"]
+        and args.vchroms == control_args["vchroms"]
+    )
 
 
 # For not direct testing of assert_and_fix_args_for_training (should fail on assert)
+
 
 @pytest.mark.parametrize(
     "args",
@@ -1544,122 +1664,240 @@ def test_parse_chromosome_arguments_for_training(args, control_args):
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr2", "chr3", "chr1", "chr10", "chr11", "chr8", "chr12", "chr13",
-                "--tchroms", "chr1", "chr10", "chr11",
-                "--vchroms", "chr8", "chr10", "chr13",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr2",
+                "chr3",
+                "chr1",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tchroms",
+                "chr1",
+                "chr10",
+                "chr11",
+                "--vchroms",
+                "chr8",
+                "chr10",
+                "chr13",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ]
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--preferences", "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr2", "chr3", "chr1", "chr10", "chr11", "chr8", "chr12", "chr13",
-                "--tchroms", "chr1", "chr10", "chr11",
-                "--vchroms", "chr8", "chr10", "chr13",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--preferences",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr2",
+                "chr3",
+                "chr1",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tchroms",
+                "chr1",
+                "chr10",
+                "chr11",
+                "--vchroms",
+                "chr8",
+                "chr10",
+                "chr13",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ]
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr2", "chr3", "chr1", "chr10", "chr11", "chr8", "chr12", "chr13",
-                "--tchroms", "chr1", "chr20", "chr11",
-                "--vchroms", "chr8", "chr10", "chr13",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr2",
+                "chr3",
+                "chr1",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tchroms",
+                "chr1",
+                "chr20",
+                "chr11",
+                "--vchroms",
+                "chr8",
+                "chr10",
+                "chr13",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ]
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--preferences", "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr2", "chr3", "chr1", "chr10", "chr11", "chr8", "chr12", "chr13",
-                "--tchroms", "chr1", "chr20", "chr11",
-                "--vchroms", "chr8", "chr10", "chr13",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--preferences",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr2",
+                "chr3",
+                "chr1",
+                "chr10",
+                "chr11",
+                "chr8",
+                "chr12",
+                "chr13",
+                "--tchroms",
+                "chr1",
+                "chr20",
+                "chr11",
+                "--vchroms",
+                "chr8",
+                "chr10",
+                "chr13",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ]
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr1", "chr8",
-                "--tchroms", "chr1",
-                "--vchroms", "chr8",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr1",
+                "chr8",
+                "--tchroms",
+                "chr1",
+                "--vchroms",
+                "chr8",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ]
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--preferences", "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr1", "chr8",
-                "--tchroms", "chr1",
-                "--vchroms", "chr8",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--preferences",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr1",
+                "chr8",
+                "--tchroms",
+                "chr1",
+                "--vchroms",
+                "chr8",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ]
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr1", "chr8",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr1",
+                "chr8",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ]
         ),
         (
             [
                 "train",
-                "--signal", "train_signal_cell_A549.bigwig",
-                "--validation", "validate_signal_cell_HCT116.bigwig",
-                "--average", "average.bigwig",
-                "--preferences", "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
-                "--sequence", "hg19.2bit",
-                "--chroms", "chr1", "chr8",
-                "--tsites",  "train_sites_cell_A549_tf_CTCF.bigwig",
-                "--vsites", "train_sites_cell_A549_tf_CTCF.bigwig"
+                "--signal",
+                "train_signal_cell_A549.bigwig",
+                "--validation",
+                "validate_signal_cell_HCT116.bigwig",
+                "--average",
+                "average.bigwig",
+                "--preferences",
+                "GSE143104_ENCFF551HTC_pseudoreplicated_IDR_thresholded_peaks_hg19.bigBed",
+                "--sequence",
+                "hg19.2bit",
+                "--chroms",
+                "chr1",
+                "chr8",
+                "--tsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
+                "--vsites",
+                "train_sites_cell_A549_tf_CTCF.bigwig",
             ]
-        )
-    ]
+        ),
+    ],
 )
 def test_parse_chromosome_arguments_for_training_should_fail(args):
     with pytest.raises(AssertionError):
         args = parse_arguments(args, DATA_FOLDER)
-    
-
 
 
 # average.bigwig

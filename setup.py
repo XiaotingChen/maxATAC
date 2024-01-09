@@ -80,7 +80,7 @@ setup(
         ]
     ),
     install_requires=[
-        "tensorflow",
+        "tensorflow==2.14.0",
         "tensorboard",
         "biopython",
         "py2bit",
@@ -94,7 +94,8 @@ setup(
         "pyyaml",
         "pysam",
         "seaborn",
-        "pytest"
+        "pytest",
+        "tensorflow_addons"
     ],
     zip_safe=False,
     scripts=["maxatac/bin/maxatac"],
