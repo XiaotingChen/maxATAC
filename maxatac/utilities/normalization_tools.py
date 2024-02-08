@@ -140,6 +140,30 @@ def minmax_normalize_array(
 
     return normalized_array
 
+def logminmax_normalize_array(
+    array: np.array, min_value: int, max_value: int, clip: bool = False
+):
+    """MinMax normalize the numpy array based on the genomic min and max
+
+    Args:
+        array (np.array): Input array of bigwig values
+        min_value (int): Max value for normalization
+        max_value (int): Min value for normalization
+        clip (bool, optional): Clip the values above the max value. Defaults to False.
+
+    Returns:
+        min-max normalized array: An array that has been min-max normalized
+
+    Examples:
+
+    >>> normalized_array = logminmax_normalize_array(chr1_array, 0, 1, False)
+    """
+    normalized_array = (np.log10(array+1) - np.log10(min_value+1)) / (np.log10(max_value+1) - np.log10(min_value+1))
+
+    if clip:
+        normalized_array = np.clip(normalized_array, 0, 1)
+
+    return normalized_array
 
 def median_mad_normalize_array(array, median, mad):
     """
