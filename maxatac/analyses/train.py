@@ -37,7 +37,7 @@ with Mute():
         update_model_config_from_args,
         generate_tfds_files,
         get_tfds_data,
-        model_selection_v2
+        model_selection_v2,
     )
     from maxatac.utilities.plot import (
         export_binary_metrics,

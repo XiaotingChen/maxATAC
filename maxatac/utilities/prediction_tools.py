@@ -10,7 +10,7 @@ from maxatac.utilities.system_tools import Mute
 
 with Mute():
     from tensorflow.keras.models import load_model
-    from maxatac.utilities.genome_tools import load_bigwig, load_2bit, dump_bigwig
+    from maxatac.utilities.genome_tools import load_bigwig, load_2bit, dump_bigwig,load_multiple_bigwig
     from maxatac.utilities.training_tools import get_input_matrix, MaxATACModel
 
 
@@ -365,6 +365,7 @@ class PredictionDataGenerator_tfds(tf.keras.utils.Sequence):
         batch_size=32,
         use_complement=False,
         inter_fusion=False,
+        extra_signals=[],
     ):
         """
         Initialize the training generator. This is a keras sequence class object. It is used
@@ -387,6 +388,7 @@ class PredictionDataGenerator_tfds(tf.keras.utils.Sequence):
         self.input_length = input_length
         self.use_complement = use_complement
         self.inter_fusion = inter_fusion
+        self.extra_signals = extra_signals
 
         self.predict_roi_df.reset_index(inplace=True, drop=True)
 
@@ -445,6 +447,11 @@ class PredictionDataGenerator_tfds(tf.keras.utils.Sequence):
         # Calculate the size of the predictions pool
         roi_size = roi_pool.shape[0]
 
+        if len(self.extra_signals) > 0:
+            extra_signals_streams = load_multiple_bigwig(self.extra_signals)
+        else:
+            extra_signals_streams = []
+
         # With the files loaded get the data
         with load_bigwig(self.signal) as signal_stream, load_2bit(
             self.sequence
@@ -462,6 +469,8 @@ class PredictionDataGenerator_tfds(tf.keras.utils.Sequence):
                     end=int(row[2]),
                     use_complement=self.use_complement,
                     reverse_matrix=self.use_complement,
+                    extra_signals_streams=extra_signals_streams,
+                    rows=INPUT_CHANNELS + len(self.extra_signals),
                 )
 
                 # Append the matrix of values to the batch list
@@ -484,6 +493,7 @@ def make_stranded_predictions(
     number_intervals: int = 32,
     input_channels: int = INPUT_CHANNELS,
     input_length: int = INPUT_LENGTH,
+    extra_signals: list = [],
 ):
     chr_roi_pool = roi_pool[roi_pool["chr"] == chromosome].copy()
 
@@ -519,6 +529,7 @@ def make_stranded_predictions(
         batch_size=batch_size,
         use_complement=use_complement,
         inter_fusion=inter_fusion,
+        extra_signals=extra_signals,
     )
 
     logging.info("Making predictions")

@@ -459,6 +459,7 @@ def get_multiinput_transformer(
     target_scale_factor=1,
     dense_b=False,
     weights=None,
+    extra_signals_channels=0
 ):
     """
     If weights are provided they will be loaded into created model
@@ -467,7 +468,7 @@ def get_multiinput_transformer(
 
     # Current there are two inputs: one for the genome sequence, one for the ATAC-seq signal
     _input = Input(
-        shape=(input_length, INPUT_CHANNELS),
+        shape=(input_length, INPUT_CHANNELS+extra_signals_channels),
     )
 
     genome_input = tf.keras.layers.Lambda(

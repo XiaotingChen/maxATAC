@@ -274,6 +274,14 @@ def get_parser():
     )
 
     predict_parser.add_argument(
+        "--extra_signals",
+        dest="extra_signals",
+        type=str,
+        required=False,
+        help="String with extra signal bigwig files, separated by comma.",
+    )
+
+    predict_parser.add_argument(
         "-o",
         "--output",
         dest="output_directory",

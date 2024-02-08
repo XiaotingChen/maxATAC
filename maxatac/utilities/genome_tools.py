@@ -89,6 +89,17 @@ def load_bigwig(location):
     return pyBigWig.open(get_absolute_path(location))
 
 
+def load_multiple_bigwig(location_list):
+    """
+    Load a bigwig file
+
+    :param location: path to the bigwig file
+
+    :return: opened bigwig file
+    """
+    return [pyBigWig.open(get_absolute_path(location)) for location in location_list]
+
+
 def get_bigwig_values(bigwig_path, chrom_name, chrom_end, chrom_start=0):
     """
     Get the values for a genomic region of interest from a bigwig file.
