@@ -140,6 +140,7 @@ def minmax_normalize_array(
 
     return normalized_array
 
+
 def logminmax_normalize_array(
     array: np.array, min_value: int, max_value: int, clip: bool = False
 ):
@@ -158,12 +159,15 @@ def logminmax_normalize_array(
 
     >>> normalized_array = logminmax_normalize_array(chr1_array, 0, 1, False)
     """
-    normalized_array = (np.log10(array+1) - np.log10(min_value+1)) / (np.log10(max_value+1) - np.log10(min_value+1))
+    normalized_array = (np.log10(array + 1) - np.log10(min_value + 1)) / (
+        np.log10(max_value + 1) - np.log10(min_value + 1)
+    )
 
     if clip:
         normalized_array = np.clip(normalized_array, 0, 1)
 
     return normalized_array
+
 
 def median_mad_normalize_array(array, median, mad):
     """

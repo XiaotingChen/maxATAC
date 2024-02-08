@@ -20,7 +20,7 @@ with Mute():
         create_prediction_regions,
         make_stranded_predictions,
     )
-    from maxatac.utilities.constants import DATA_PATH
+    from maxatac.utilities.constants import DATA_PATH, INPUT_CHANNELS, INPUT_LENGTH
     from maxatac.analyses.peaks import run_call_peaks
 
 
@@ -114,7 +114,7 @@ def run_prediction(args):
     logging.info(
         "Prediction Parameters \n"
         + f"Output filename: {outfile_name_bigwig} \n"
-        + f"Target signal: {args.signal} \n"
+        + f"ATAC-seq signal: {args.signal} \n"
         + f"Sequence data: {args.sequence} \n"
         + f"Model: {args.model} \n"
         + "Chromosome requested: \n   - "
@@ -127,6 +127,8 @@ def run_prediction(args):
         + f"Batch Size: {args.batch_size} \n"
         + f"Output filename: {outfile_name_bigwig}"
     )
+
+    extra_signals = args.extra_signals.split(",")
 
     with Pool(int(multiprocessing.cpu_count())) as p:
         forward_strand_predictions = p.starmap(
@@ -143,6 +145,10 @@ def run_prediction(args):
                     chromosome,
                     train_args,
                     model_config["INTER_FUSION"],
+                    32,
+                    INPUT_CHANNELS + model_config["Extra signals channels"],
+                    INPUT_LENGTH,
+                    extra_signals,
                 )
                 for chromosome in chrom_list
             ],
