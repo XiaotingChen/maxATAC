@@ -10,6 +10,7 @@ from maxatac.utilities.genome_tools import (
     chromosome_blacklist_mask,
 )
 from maxatac.utilities.normalization_tools import (
+    logminmax_normalize_array,
     minmax_normalize_array,
     zscore_normalize_array,
     get_genomic_stats,
@@ -133,6 +134,11 @@ def run_normalization(args):
 
             elif args.method == "arcsinh":
                 normalized_signal = arcsinh_normalize_array(chr_vals)
+
+            elif args.method == "log-min-max":
+                normalized_signal = logminmax_normalize_array(
+                    chr_vals, min_value, max_value, clip=args.clip
+                )
 
             else:
                 raise NameError("Wrong normalization")

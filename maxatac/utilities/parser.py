@@ -1081,7 +1081,7 @@ def get_parser():
     normalize_parser.add_argument(
         "--clip",
         dest="clip",
-        type=bool,
+        action="store_true",
         required=False,
         default=False,
         help="Whether to clip minmax values to the range 0,1",
