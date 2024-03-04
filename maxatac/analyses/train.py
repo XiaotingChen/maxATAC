@@ -37,7 +37,7 @@ with Mute():
         update_model_config_from_args,
         generate_tfds_files,
         get_tfds_data,
-        model_selection_v2
+        model_selection_v2,
     )
     from maxatac.utilities.plot import (
         export_binary_metrics,
@@ -220,6 +220,19 @@ def run_training(args):
     _chip_prob = 1.0 / (1.0 + float(args.ATAC_SAMPLING_MULTIPLIER))
     _atac_prob = 1.0 - _chip_prob
 
+    repeat_scale = 1
+    if (
+        train_data_chip.cardinality().numpy() * float(args.ATAC_SAMPLING_MULTIPLIER)
+        > train_data_atac.cardinality().numpy()
+    ):
+        repeat_scale = int(
+            np.ceil(
+                train_data_chip.cardinality().numpy()
+                * float(args.ATAC_SAMPLING_MULTIPLIER)
+                / train_data_atac.cardinality().numpy()
+            )
+        )
+
     train_data = (
         tensorflow.data.Dataset.sample_from_datasets(
             [
@@ -248,7 +261,7 @@ def run_training(args):
                     train_data_atac.cardinality().numpy(),
                     seed=args.seed + 2 if args.DETERMINISTIC else None,
                 )
-                .repeat(args.epochs),
+                .repeat(args.epochs * repeat_scale),
             ],
             weights=[_chip_prob, _atac_prob],
             stop_on_empty_dataset=False,
