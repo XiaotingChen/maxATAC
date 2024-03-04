@@ -10,7 +10,12 @@ from maxatac.utilities.system_tools import Mute
 
 with Mute():
     from tensorflow.keras.models import load_model
-    from maxatac.utilities.genome_tools import load_bigwig, load_2bit, dump_bigwig,load_multiple_bigwig
+    from maxatac.utilities.genome_tools import (
+        load_bigwig,
+        load_2bit,
+        dump_bigwig,
+        load_multiple_bigwig,
+    )
     from maxatac.utilities.training_tools import get_input_matrix, MaxATACModel
 
 
