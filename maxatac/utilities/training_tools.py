@@ -1516,7 +1516,7 @@ def model_selection_v2(training_history, output_dir):
     df["train_val_loss_diff_abs_ratio"] = (
         df["train_val_loss_diff_abs"] / df["train_val_loss_maximum"]
     )
-    val_loss_min_idx=df["val_loss"].idxmin()
+    val_loss_min_idx = df["val_loss"].idxmin()
     epoch = df.iloc[val_loss_min_idx:]["train_val_loss_diff_abs_ratio"].idxmin() + 1
 
     # Get the realpath to the best model
@@ -2137,7 +2137,7 @@ def get_tfds_data(data_meta, maxatac_model, train_or_valid, roi_type):
 
     # vstack
     data = tfds_list[0]
-    if len(tfds) > 1:
+    if len(tfds_list) > 1:
         for k in range(1, len(tfds_list)):
             data = data.concatenate(tfds_list[k])
 
