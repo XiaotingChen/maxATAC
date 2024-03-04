@@ -172,7 +172,7 @@ class MaxATACModel(object):
                     dense_b=self.dense,
                     weights=self.weights,
                     model_config=self.model_config,
-                    extra_signals_channels=self.extra_signals_channels
+                    extra_signals_channels=self.extra_signals_channels,
                 )
             else:
                 sys.exit("Model Architecture not specified correctly. Please check")
@@ -1986,7 +1986,7 @@ def generate_tfds_files(
                 tf.TensorSpec(
                     shape=(
                         INPUT_LENGTH + 2 * args.FLANKING_SIZE,
-                        INPUT_CHANNELS + maxatac_model.extra_signals_channels
+                        INPUT_CHANNELS + maxatac_model.extra_signals_channels,
                     ),
                     dtype=tf.float32,
                 ),
@@ -2035,13 +2035,13 @@ def generate_tfds_files(
                 suppress_cell_type_TN_weight=model_config[
                     "SUPPRESS_CELL_TYPE_SPECIFIC_TN_WEIGHTS"
                 ],
-                extra_signals_channels=maxatac_model.extra_signals_channels
+                extra_signals_channels=maxatac_model.extra_signals_channels,
             ),
             output_signature=(
                 tf.TensorSpec(
                     shape=(
                         INPUT_LENGTH + 2 * args.FLANKING_SIZE,
-                        INPUT_CHANNELS + maxatac_model.extra_signals_channels
+                        INPUT_CHANNELS + maxatac_model.extra_signals_channels,
                     ),
                     dtype=tf.float32,
                 ),
@@ -2086,13 +2086,13 @@ def generate_tfds_files(
                 shuffle=False,
                 chr_limit=chr_limit,
                 flanking_padding_size=args.FLANKING_SIZE,
-                extra_signals_channels=maxatac_model.extra_signals_channels
+                extra_signals_channels=maxatac_model.extra_signals_channels,
             ),
             output_signature=(
                 tf.TensorSpec(
                     shape=(
                         INPUT_LENGTH + 2 * args.FLANKING_SIZE,
-                        INPUT_CHANNELS + maxatac_model.extra_signals_channels
+                        INPUT_CHANNELS + maxatac_model.extra_signals_channels,
                     ),
                     dtype=tf.float32,
                 ),
