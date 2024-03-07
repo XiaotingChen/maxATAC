@@ -87,6 +87,12 @@ def run_prediction(args):
     with open(args.model_config, "r") as f:
         model_config = json.load(f)
 
+
+    # Import meta txt as dataframe
+    if args.meta_file!=None:
+        _predict_meta_dataframe = pd.read_csv(
+            args.meta_file, sep="\t", header=0, index_col=0
+        )
     # Output filename for the bigwig predictions file based on the output directory and the prefix. Add the bw extension
     outfile_name_bigwig = os.path.join(output_directory, args.name + ".bw")
 
@@ -128,7 +134,11 @@ def run_prediction(args):
         + f"Output filename: {outfile_name_bigwig}"
     )
 
-    extra_signals = args.extra_signals.split(",")
+    if args.meta_file!=None:
+        args.extra_signals=_predict_meta_dataframe[_predict_meta_dataframe['Cell_Line']==args.cell_type]['Extra_Signal_Files'].tolist()[0]
+        _extra_signals = args.extra_signals.split(",")
+    else:
+        _extra_signals=[]
 
     with Pool(int(multiprocessing.cpu_count())) as p:
         forward_strand_predictions = p.starmap(
@@ -148,7 +158,7 @@ def run_prediction(args):
                     32,
                     INPUT_CHANNELS + model_config["Extra signals channels"],
                     INPUT_LENGTH,
-                    extra_signals,
+                    _extra_signals,
                 )
                 for chromosome in chrom_list
             ],

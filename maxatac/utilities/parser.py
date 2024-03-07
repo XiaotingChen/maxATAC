@@ -278,6 +278,7 @@ def get_parser():
         dest="extra_signals",
         type=str,
         required=False,
+        default="",
         help="String with extra signal bigwig files, separated by comma.",
     )
 
@@ -423,6 +424,23 @@ def get_parser():
         default=False,
         required=False,
         help="Skip calling peaks on prediction tracks",
+    )
+
+    predict_parser.add_argument(
+        "--meta_file",
+        dest="meta_file",
+        type=str,
+        required=False,
+        default=None,
+        help="Meta file containing ATAC Signal and peak path for all cell lines (.tsv format)",
+    )
+
+    predict_parser.add_argument(
+        "--cell_type",
+        dest="cell_type",
+        type=str,
+        required=False,
+        help="Cell type to pull from meta file",
     )
 
     #############################################
