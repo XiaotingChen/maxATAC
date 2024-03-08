@@ -163,6 +163,7 @@ class MaxATACModel(object):
                 dense_b=self.dense,
                 weights=self.weights,
                 model_config=self.model_config,
+                extra_signals_channels=self.extra_signals_channels
             )
         elif self.arch == "Transformer":
             if self.inter_fusion:
