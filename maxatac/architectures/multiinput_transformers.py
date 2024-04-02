@@ -244,6 +244,47 @@ def get_conv_tower(
     return inbound_layer
 
 
+def get_seq_c(
+    inbound_layer,
+    name="seq_c"
+):
+    return tf.squeeze(
+        tf.image.flip_left_right(
+            tf.expand_dims(inbound_layer, axis=3)
+        ),
+        axis=3,
+        name=name,
+    )
+
+
+def get_seq_rc(
+    inbound_layer,
+    name="seq_rc"
+):
+    return  tf.squeeze(
+        tf.image.flip_up_down(
+            tf.image.flip_left_right(
+                tf.expand_dims(x, axis=3)
+            )
+        ),
+        axis=3,
+        name=name,
+    )
+
+
+def get_seq_r(
+        inbound_layer,
+        name="seq_r"
+):
+    return tf.squeeze(
+        tf.image.flip_up_down(
+          tf.expand_dims(inbound_layer, axis=3)
+        ),
+        axis=3,
+        name=name,
+    )
+
+
 @tf.keras.utils.register_keras_serializable()
 class Swish(tf.keras.layers.Layer):
     def __init__(self, beta=1.0, *args, **kwargs):
@@ -473,6 +514,9 @@ def get_multiinput_transformer(
     genome_input = tf.keras.layers.Lambda(
         lambda x: x[:, :, :DNA_INPUT_CHANNELS], name="genome"
     )(_input)
+
+    genome_input_c = get_seq_c(genome_input,name="genome_c")
+
     atacseq_input = tf.keras.layers.Lambda(
         lambda x: x[:, :, DNA_INPUT_CHANNELS:], name="atac"
     )(_input)
@@ -556,7 +600,7 @@ def get_multiinput_transformer(
     else:
         genome_layer = get_layer(
             inbound_layer=genome_input,
-            filters=filters,
+            filters=filters*4,
             kernel_size=input_kernel_size,
             activation="linear",
             padding=padding,
@@ -566,6 +610,22 @@ def get_multiinput_transformer(
             name="first_conv_kernel",
             skip_batch_norm=True,
         )
+
+    genome_layer_c = get_layer(
+        inbound_layer=genome_input_c,
+        filters=filters*4,
+        kernel_size=input_kernel_size,
+        activation="linear",
+        padding=padding,
+        dilation_rate=1,
+        kernel_initializer=KERNEL_INITIALIZER,
+        n=1,
+        name="first_conv_kernel_c",
+        skip_batch_norm=True,
+    )
+
+    genome_layer=tf.keras.layers.Concatenate(axis=-1)([genome_layer,genome_layer_c])
+
 
     atacseq_layer1 = get_layer(
         inbound_layer=atacseq_layer,
