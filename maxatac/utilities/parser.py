@@ -274,6 +274,16 @@ def get_parser():
     )
 
     predict_parser.add_argument(
+        "--additional_signals",
+        dest="additional_signals",
+        type=str,
+        required=False,
+        nargs="+",
+        default=[],
+        help="Any additional signal tracks if any",
+    )
+
+    predict_parser.add_argument(
         "-o",
         "--output",
         dest="output_directory",

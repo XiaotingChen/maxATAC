@@ -5,7 +5,7 @@ import pandas as pd
 import pybedtools
 import tensorflow as tf
 
-from maxatac.utilities.constants import INPUT_CHANNELS, INPUT_LENGTH, ALL_CHRS
+from maxatac.utilities.constants import INPUT_CHANNELS, INPUT_LENGTH, ALL_CHRS, DNA_INPUT_CHANNELS
 from maxatac.utilities.system_tools import Mute
 
 with Mute():
@@ -365,6 +365,7 @@ class PredictionDataGenerator_tfds(tf.keras.utils.Sequence):
         batch_size=32,
         use_complement=False,
         inter_fusion=False,
+        additional_signals: list = []
     ):
         """
         Initialize the training generator. This is a keras sequence class object. It is used
@@ -387,6 +388,7 @@ class PredictionDataGenerator_tfds(tf.keras.utils.Sequence):
         self.input_length = input_length
         self.use_complement = use_complement
         self.inter_fusion = inter_fusion
+        self.additional_signals = additional_signals
 
         self.predict_roi_df.reset_index(inplace=True, drop=True)
 
@@ -449,23 +451,37 @@ class PredictionDataGenerator_tfds(tf.keras.utils.Sequence):
         with load_bigwig(self.signal) as signal_stream, load_2bit(
             self.sequence
         ) as sequence_stream:
+
+            # Get nucpos signals
+            if len(self.additional_signals) == 0:
+                additional_signal_streams = []
+            else:
+                additional_signal_streams = [load_bigwig(bw) for bw in self.additional_signals]
+
+            # Get the input matrix of values and one-hot encoded sequence
             for row_idx in range(roi_size):
                 # Get the single row
                 row = roi_pool.loc[row_idx, :]
 
                 # Get the matric of values for the entry
-                input_matrix = get_input_matrix(
+                input_matrix = get_input_matrix_v2(
                     signal_stream=signal_stream,
                     sequence_stream=sequence_stream,
                     chromosome=row[0],
                     start=int(row[1]),
                     end=int(row[2]),
+                    rows=DNA_INPUT_CHANNELS+len(additional_signal_streams)+1,
                     use_complement=self.use_complement,
                     reverse_matrix=self.use_complement,
+                    additional_signal_streams=additional_signal_streams
                 )
 
                 # Append the matrix of values to the batch list
                 inputs_batch.append(input_matrix)
+
+            if len(additional_signal_streams) > 0:
+                for bw in additional_signal_streams:
+                    bw.close()
 
         return np.array(inputs_batch)
 
@@ -484,6 +500,7 @@ def make_stranded_predictions(
     number_intervals: int = 32,
     input_channels: int = INPUT_CHANNELS,
     input_length: int = INPUT_LENGTH,
+    additional_signals: list = []
 ):
     chr_roi_pool = roi_pool[roi_pool["chr"] == chromosome].copy()
 
@@ -519,6 +536,7 @@ def make_stranded_predictions(
         batch_size=batch_size,
         use_complement=use_complement,
         inter_fusion=inter_fusion,
+        additional_signals=additional_signals
     )
 
     logging.info("Making predictions")

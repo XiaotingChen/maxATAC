@@ -16,6 +16,7 @@ from maxatac.utilities.constants import (
     OUTPUT_LENGTH,
     BP_RESOLUTION,
     MODEL_CONFIG_UPDATE_LIST,
+    DNA_INPUT_CHANNELS
 )
 from maxatac.utilities.system_tools import Mute
 
@@ -124,9 +125,9 @@ def run_training(args):
     )
 
     # export model structure
-    export_model_structure(
-        maxatac_model.nn_model, maxatac_model.results_location, ext=".pdf"
-    )
+    #export_model_structure(
+    #    maxatac_model.nn_model, maxatac_model.results_location, ext=".pdf"
+    #)
 
     logging.info("Import training regions")
     # Import training regions
@@ -187,8 +188,13 @@ def run_training(args):
     # If tfds files need to be generated
     if args.GET_TFDS:
         logging.info("Initialize data generation")
+        # Determine how many input channels there are
+        meta_file = pd.read_csv(args.meta_file, sep="\t")
+        num_signal_cols = len(
+            [i for i in meta_file.columns.tolist() if "Signal_File" in i]
+        )
         generate_tfds_files(
-            args, maxatac_model, train_examples, validate_examples, model_config
+            args, maxatac_model, train_examples, validate_examples, model_config, num_channels=DNA_INPUT_CHANNELS+num_signal_cols
         )
         logging.info("Generating tfds files completed!")
         sys.exit()

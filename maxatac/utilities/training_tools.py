@@ -25,6 +25,7 @@ from maxatac.utilities.constants import (
     BP_RESOLUTION,
     BATCH_SIZE,
     CHR_POOL_SIZE,
+    DNA_INPUT_CHANNELS,
     INPUT_LENGTH,
     INPUT_CHANNELS,
     OUTPUT_LENGTH,
@@ -121,10 +122,13 @@ class MaxATACModel(object):
 
         # Find the unique number of cell types in the meta file
         self.cell_types = self.meta_dataframe["Cell_Line"].unique().tolist()
+        # Determine number of input channels
+        num_signal_cols = len([i for i in self.meta_dataframe.columns.tolist() if "ATAC" not in i and "Signal_File" in i])
+        self.input_channels = DNA_INPUT_CHANNELS + num_signal_cols + 1
 
         self.train_tf = self.meta_dataframe["TF"].unique()[0]
-
         self.nn_model = self.__get_model()
+
 
         if interpret:
             assert (
@@ -162,6 +166,7 @@ class MaxATACModel(object):
                     dense_b=self.dense,
                     weights=self.weights,
                     model_config=self.model_config,
+                    input_channels=self.input_channels
                 )
             else:
                 sys.exit("Model Architecture not specified correctly. Please check")
@@ -455,6 +460,66 @@ def get_input_matrix(
     return input_matrix.T
 
 
+def get_input_matrix_v2(
+    signal_stream,
+    sequence_stream,
+    chromosome,
+    start,  # end - start = cols
+    end,
+    rows=INPUT_CHANNELS,
+    cols=INPUT_LENGTH,
+    bp_order=BP_ORDER,
+    use_complement=False,
+    reverse_matrix=False,
+    additional_signal_streams=[]
+):
+    """
+    Get a matrix of values from the corresponding genomic position. You can supply whether you want to use the
+    complement sequence. You can also choose whether you want to reverse the whole matrix.
+
+    Differs from get_input_matrix in that this function allows additional signal_streams that concatenate with the original
+    ATAC-seq signal stream
+
+    :param rows: Number of rows == channels
+    :param cols: Number of cols == region length
+    :param signal_stream: Signal bigwig stream
+    :param sequence_stream: 2bit DNA sequence stream
+    :param bp_order: BP order
+    :param chromosome: chromosome
+    :param start: start
+    :param end: end
+    :param use_complement: use complement strand for training
+    :param reverse_matrix: reverse the input matrix
+    :param additional_signal_streams: list of additional bigwig streams
+
+    :return: a matrix (rows x cols) of values from the input bigwig files
+    """
+
+    input_matrix = np.zeros((rows, cols))
+    for n, bp in enumerate(bp_order):
+        # Get the sequence from the interval of interest
+        target_sequence = Seq(sequence_stream.sequence(chromosome, start, end))
+
+        if use_complement:
+            # Get the complement of the sequence
+            target_sequence = target_sequence.complement()
+
+        # Get the one hot encoded sequence
+        input_matrix[n, :] = get_one_hot_encoded(target_sequence, bp)
+
+    signal_array = np.array(signal_stream.values(chromosome, start, end))   # (1024,)
+    additional_array = np.array([np.array(s.values(chromosome, start, end)) for s in additional_signal_streams])    # (4, 1024)
+    full_signal_array = np.concatenate([signal_array.reshape(1, -1), additional_array])  # (5, 1024)
+
+    input_matrix[DNA_INPUT_CHANNELS:, :] = full_signal_array
+
+    # If reverse_matrix then reverse the matrix. This changes the left to right orientation.
+    if reverse_matrix:
+        input_matrix = input_matrix[::-1]
+
+    return input_matrix.T
+
+
 def create_roi_batch(
     sequence,
     meta_table,
@@ -645,6 +710,9 @@ def create_roi_batch_v2(
             signal = meta_row.loc[0, "ATAC_Signal_File"]
             binding = meta_row.loc[0, "Binding_File"]
 
+            additional_signal_cols = [c for c in meta_row.columns.tolist() if "ATAC" not in c and "Signal_File" in c]
+            additional_signals = [meta_row.loc[0, c] for c in additional_signal_cols] 
+
             # Choose whether to use the reverse complement of the region
             if rev_comp_train:
                 rev_comp = random.choice([True, False])
@@ -655,16 +723,33 @@ def create_roi_batch_v2(
             with load_2bit(sequence) as sequence_stream, load_bigwig(
                 signal
             ) as signal_stream, load_bigwig(binding) as binding_stream:
+                
                 # Get the input matrix of values and one-hot encoded sequence
-                input_matrix = get_input_matrix(
-                    signal_stream=signal_stream,
-                    sequence_stream=sequence_stream,
-                    chromosome=chrom_name,
-                    start=start,
-                    end=end,
-                    use_complement=rev_comp,
-                    reverse_matrix=rev_comp,
-                )
+                if len(additional_signals) == 0:
+                    input_matrix = get_input_matrix(
+                        signal_stream=signal_stream,
+                        sequence_stream=sequence_stream,
+                        chromosome=chrom_name,
+                        start=start,
+                        end=end,
+                        use_complement=rev_comp,
+                        reverse_matrix=rev_comp,
+                    )
+                else:
+                    additional_signal_streams = [load_bigwig(bw) for bw in additional_signals]
+                    input_matrix = get_input_matrix_v2(
+                        signal_stream=signal_stream,
+                        sequence_stream=sequence_stream,
+                        chromosome=chrom_name,
+                        start=start,
+                        end=end,
+                        rows=DNA_INPUT_CHANNELS+len(additional_signal_streams)+1,
+                        use_complement=rev_comp,
+                        reverse_matrix=rev_comp,
+                        additional_signal_streams=additional_signal_streams
+                    )
+                    for bw in additional_signal_streams:
+                        bw.close()
 
                 # Append the sample to the inputs batch.
                 inputs_batch.append(input_matrix)
@@ -725,6 +810,9 @@ def create_roi_batch_v2(
             signal = meta_row.loc[0, "ATAC_Signal_File"]
             binding = meta_row.loc[0, "Binding_File"]
 
+            additional_signal_cols = [c for c in meta_row.columns.tolist() if "ATAC" not in c and "Signal_File" in c]
+            additional_signals = [meta_row.loc[0, c] for c in additional_signal_cols]
+
             # Choose whether to use the reverse complement of the region
             if rev_comp_train:
                 rev_comp = random.choice([True, False])
@@ -735,16 +823,33 @@ def create_roi_batch_v2(
             with load_2bit(sequence) as sequence_stream, load_bigwig(
                 signal
             ) as signal_stream, load_bigwig(binding) as binding_stream:
+                
                 # Get the input matrix of values and one-hot encoded sequence
-                input_matrix = get_input_matrix(
-                    signal_stream=signal_stream,
-                    sequence_stream=sequence_stream,
-                    chromosome=chrom_name,
-                    start=start,
-                    end=end,
-                    use_complement=rev_comp,
-                    reverse_matrix=rev_comp,
-                )
+                if len(additional_signals) == 0:
+                    input_matrix = get_input_matrix(
+                        signal_stream=signal_stream,
+                        sequence_stream=sequence_stream,
+                        chromosome=chrom_name,
+                        start=start,
+                        end=end,
+                        use_complement=rev_comp,
+                        reverse_matrix=rev_comp,
+                    )
+                else:
+                    additional_signal_streams = [load_bigwig(bw) for bw in additional_signals]
+                    input_matrix = get_input_matrix_v2(
+                        signal_stream=signal_stream,
+                        sequence_stream=sequence_stream,
+                        chromosome=chrom_name,
+                        start=start,
+                        end=end,
+                        rows=DNA_INPUT_CHANNELS+len(additional_signal_streams)+1,
+                        use_complement=rev_comp,
+                        reverse_matrix=rev_comp,
+                        additional_signal_streams=additional_signal_streams
+                    )
+                    for bw in additional_signal_streams:
+                        bw.close()
 
                 # Append the sample to the inputs batch.
                 inputs_batch.append(input_matrix)
@@ -888,21 +993,42 @@ class DataGen:
         signal = meta_row.loc[0, "ATAC_Signal_File"]
         binding = meta_row.loc[0, "Binding_File"]
 
+        additional_signal_cols = [c for c in meta_row.columns.tolist() if "ATAC" not in c and "Signal_File" in c]
+        additional_signals = [meta_row.loc[0, c] for c in additional_signal_cols]
+        
         with load_2bit(self.sequence) as sequence_stream, load_bigwig(
             signal
         ) as signal_stream, load_bigwig(binding) as binding_stream:
+            
             # Get the input matrix of values and one-hot encoded sequence
-            input_matrix = get_input_matrix(
-                signal_stream=signal_stream,
-                sequence_stream=sequence_stream,
-                chromosome=chrom_name,
-                start=start,
-                end=end,
-                use_complement=False,
-                reverse_matrix=False,
-                rows=INPUT_CHANNELS,
-                cols=self.window_size + 2 * self.flanking_padding_size,
-            )
+            if len(additional_signals) == 0:
+                input_matrix = get_input_matrix(
+                    signal_stream=signal_stream,
+                    sequence_stream=sequence_stream,
+                    chromosome=chrom_name,
+                    start=start,
+                    end=end,
+                    use_complement=False,
+                    reverse_matrix=False,
+                    rows=INPUT_CHANNELS,
+                    cols=self.window_size + 2 * self.flanking_padding_size,
+                )
+            else:
+                additional_signal_streams = [load_bigwig(bw) for bw in additional_signals]
+                input_matrix = get_input_matrix_v2(
+                    signal_stream=signal_stream,
+                    sequence_stream=sequence_stream,
+                    chromosome=chrom_name,
+                    start=start,
+                    end=end,
+                    rows=DNA_INPUT_CHANNELS+len(additional_signal_streams)+1,
+                    cols=self.window_size + 2 * self.flanking_padding_size,
+                    use_complement=False,
+                    reverse_matrix=False,
+                    additional_signal_streams=additional_signal_streams
+                )
+                for bw in additional_signal_streams:
+                    bw.close()
 
             # Append the sample to the inputs batch.
             # inputs_batch.append(input_matrix)
@@ -1054,21 +1180,42 @@ class ValidDataGen:
         signal = meta_row.loc[0, "ATAC_Signal_File"]
         binding = meta_row.loc[0, "Binding_File"]
 
+        additional_signal_cols = [c for c in meta_row.columns.tolist() if "ATAC" not in c and "Signal_File" in c]
+        additional_signals = [meta_row.loc[0, c] for c in additional_signal_cols]
+        
         with load_2bit(self.sequence) as sequence_stream, load_bigwig(
             signal
         ) as signal_stream, load_bigwig(binding) as binding_stream:
+            
             # Get the input matrix of values and one-hot encoded sequence
-            input_matrix = get_input_matrix(
-                signal_stream=signal_stream,
-                sequence_stream=sequence_stream,
-                chromosome=chrom_name,
-                start=start,
-                end=end,
-                use_complement=False,
-                reverse_matrix=False,
-                rows=INPUT_CHANNELS,
-                cols=self.window_size + 2 * self.flanking_padding_size,
-            )
+            if len(additional_signals) == 0:
+                input_matrix = get_input_matrix(
+                    signal_stream=signal_stream,
+                    sequence_stream=sequence_stream,
+                    chromosome=chrom_name,
+                    start=start,
+                    end=end,
+                    use_complement=False,
+                    reverse_matrix=False,
+                    rows=INPUT_CHANNELS,
+                    cols=self.window_size + 2 * self.flanking_padding_size,
+                )
+            else:
+                additional_signal_streams = [load_bigwig(bw) for bw in additional_signals]
+                input_matrix = get_input_matrix_v2(
+                    signal_stream=signal_stream,
+                    sequence_stream=sequence_stream,
+                    chromosome=chrom_name,
+                    start=start,
+                    end=end,
+                    rows=DNA_INPUT_CHANNELS+len(additional_signal_streams)+1,
+                    cols=self.window_size + 2 * self.flanking_padding_size,
+                    use_complement=False,
+                    reverse_matrix=False,
+                    additional_signal_streams=additional_signal_streams
+                )
+                for bw in additional_signal_streams:
+                    bw.close()
 
             # Append the sample to the inputs batch.
             # inputs_batch.append(input_matrix)
@@ -1231,24 +1378,43 @@ def create_random_batch_v2(
             signal = meta_row.loc[0, "ATAC_Signal_File"]
             binding = meta_row.loc[0, "Binding_File"]
 
+            additional_signal_cols = [c for c in meta_row.columns.tolist() if "ATAC" not in c and "Signal_File" in c]
+            additional_signals = [meta_row.loc[0, c] for c in additional_signal_cols]
+
             with load_2bit(sequence) as sequence_stream, load_bigwig(
                 signal
             ) as signal_stream, load_bigwig(binding) as binding_stream:
                 if rev_comp_train:
                     rev_comp = random.choice([True, False])
-
                 else:
                     rev_comp = False
 
-                input_matrix = get_input_matrix(
-                    signal_stream=signal_stream,
-                    sequence_stream=sequence_stream,
-                    chromosome=chrom_name,
-                    start=seq_start,
-                    end=seq_end,
-                    use_complement=rev_comp,
-                    reverse_matrix=rev_comp,
-                )
+                # Get the input matrix of values and one-hot encoded sequence
+                if len(additional_signals) == 0:
+                    input_matrix = get_input_matrix(
+                        signal_stream=signal_stream,
+                        sequence_stream=sequence_stream,
+                        chromosome=chrom_name,
+                        start=seq_start,
+                        end=seq_end,
+                        use_complement=rev_comp,
+                        reverse_matrix=rev_comp,
+                    )
+                else:
+                    additional_signal_streams = [load_bigwig(bw) for bw in additional_signals]
+                    input_matrix = get_input_matrix_v2(
+                        signal_stream=signal_stream,
+                        sequence_stream=sequence_stream,
+                        chromosome=chrom_name,
+                        start=seq_start,
+                        end=seq_end,
+                        rows=DNA_INPUT_CHANNELS+len(additional_signal_streams)+1,
+                        use_complement=rev_comp,
+                        reverse_matrix=rev_comp,
+                        additional_signal_streams=additional_signal_streams
+                    )
+                    for bw in additional_signal_streams:
+                        bw.close()
 
                 inputs_batch.append(input_matrix)
 
@@ -1853,7 +2019,7 @@ dataset_mapping = {
 
 
 def generate_tfds_files(
-    args, maxatac_model, train_examples, validate_examples, model_config
+    args, maxatac_model, train_examples, validate_examples, model_config, num_channels=INPUT_CHANNELS
 ):
     # data_meta_tfds = pd.DataFrame(
     #     columns=["train or valid", "tf", "cell_type", "roi_type", "path"]
@@ -1861,8 +2027,11 @@ def generate_tfds_files(
     chr_limit = build_chrom_sizes_dict(
         chromosome_list=AUTOSOMAL_CHRS, chrom_sizes_filename=args.CHROMOSOME_SIZE_FILE
     )
+    #transcription_factor = (
+    #    args.meta_file.split("/")[-1].split(".")[0].split("meta_file_")[1]
+    #)
     transcription_factor = (
-        args.meta_file.split("/")[-1].split(".")[0].split("meta_file_")[1]
+        args.meta_file.split("/")[-1].split(".")[0].split("_")[-1]
     )
 
     def parallel_tfds_gen(
@@ -2098,7 +2267,7 @@ def generate_tfds_files(
                     cell_type,
                     INPUT_LENGTH,
                     OUTPUT_LENGTH,
-                    INPUT_CHANNELS,
+                    num_channels,
                     BP_RESOLUTION,
                 )
                 for cell_type in maxatac_model.cell_types

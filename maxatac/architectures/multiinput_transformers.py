@@ -489,9 +489,9 @@ def get_multiinput_transformer(
     """
     logging.debug("Building Dilated CNN model")
 
-    # Current there are two inputs: one for the genome sequence, one for the ATAC-seq signal
+    # Current there are two inputs: one for the genome sequence, one for the ATAC-seq signal and any concatenated signals
     _input = Input(
-        shape=(input_length, INPUT_CHANNELS),
+        shape=(input_length, input_channels),
     )
 
     genome_input = tf.keras.layers.Lambda(
