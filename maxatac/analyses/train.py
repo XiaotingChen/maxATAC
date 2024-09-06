@@ -236,7 +236,7 @@ def run_training(args):
     train_data = (
         tensorflow.data.Dataset.sample_from_datasets(
             [
-                train_data_chip.cache()
+                train_data_chip
                 .map(
                     map_func=dataset_mapping[args.SHUFFLE_AUGMENTATION],
                     num_parallel_calls=args.threads
@@ -244,12 +244,13 @@ def run_training(args):
                     else tensorflow.data.AUTOTUNE,
                     deterministic=args.DETERMINISTIC,
                 )
+                .cache()
                 .shuffle(
                     train_data_chip.cardinality().numpy(),
                     seed=args.seed + 1 if args.DETERMINISTIC else None,
                 )
                 .repeat(args.epochs),
-                train_data_atac.cache()
+                train_data_atac
                 .map(
                     map_func=dataset_mapping[args.SHUFFLE_AUGMENTATION],
                     num_parallel_calls=args.threads
@@ -257,6 +258,7 @@ def run_training(args):
                     else tensorflow.data.AUTOTUNE,
                     deterministic=args.DETERMINISTIC,
                 )
+                .cache()
                 .shuffle(
                     train_data_atac.cardinality().numpy(),
                     seed=args.seed + 2 if args.DETERMINISTIC else None,
@@ -284,7 +286,6 @@ def run_training(args):
             (valid_data_combined.cardinality().numpy() // args.batch_size)
             * args.batch_size
         )
-        .cache()
         .map(
             map_func=dataset_mapping["peak_centric"]
             if args.SHUFFLE_AUGMENTATION != "no_map"
@@ -294,6 +295,7 @@ def run_training(args):
             else tensorflow.data.AUTOTUNE,
             deterministic=args.DETERMINISTIC,
         )  # whether to use non-shuffle validation
+        .cache()
         .repeat(args.epochs)
         .batch(
             batch_size=args.batch_size,
