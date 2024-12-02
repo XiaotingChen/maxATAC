@@ -73,6 +73,7 @@ class MaxATACModel(object):
         interpret_cell_type="",
         inter_fusion=False,
         deterministic=False,
+        inference=False
     ):
         """
         Initialize the maxATAC model with the input parameters and architecture
@@ -91,14 +92,16 @@ class MaxATACModel(object):
         self.arch = arch
         self.model_config = model_config
         self.seed = seed
-        self.output_directory = get_dir(output_directory)
+        self.inference=inference
+        if self.inference==False:
+            self.output_directory = get_dir(output_directory)
+            self.tensor_board_log_dir = get_dir(
+                path.join(self.output_directory, "tensorboard")
+            )
         self.model_filename = prefix + "_{epoch}" + ".h5"
         self.results_location = path.join(self.output_directory, self.model_filename)
         self.log_location = replace_extension(
             remove_tags(self.results_location, "_{epoch}"), ".csv"
-        )
-        self.tensor_board_log_dir = get_dir(
-            path.join(self.output_directory, "tensorboard")
         )
         self.threads = threads
         self.training_history = ""
