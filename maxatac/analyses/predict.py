@@ -19,10 +19,11 @@ with Mute():
         import_prediction_regions,
         create_prediction_regions,
         make_stranded_predictions,
+        create_prediction_regions_ISM
     )
     from maxatac.utilities.constants import DATA_PATH, INPUT_CHANNELS, INPUT_LENGTH
     from maxatac.analyses.peaks import run_call_peaks
-
+import pickle
 
 def run_prediction(args):
     """
@@ -82,6 +83,8 @@ def run_prediction(args):
     # Open the training args JSON file
     with open(args.train_json, "r") as f:
         train_args = json.load(f)
+    # override training's output_directory
+    train_args['output']=output_directory
 
     # Open the model_config JSON file
     with open(args.model_config, "r") as f:
@@ -102,7 +105,7 @@ def run_prediction(args):
 
     # Import the regions for prediction.
     logging.info("Create prediction regions")
-    regions_pool = create_prediction_regions(
+    regions_pool = create_prediction_regions_ISM(
         chromosomes=args.chromosomes,
         chrom_sizes=args.chrom_sizes,
         blacklist=args.blacklist,
@@ -159,70 +162,104 @@ def run_prediction(args):
                     INPUT_CHANNELS + model_config["Extra signals channels"],
                     INPUT_LENGTH,
                     _extra_signals,
+                    False
                 )
                 for chromosome in chrom_list
             ],
         )
 
-    # Write the predictions to a bigwig file and add name to args
-    prediction_bedgraph = pd.concat(forward_strand_predictions)
+    prediction_filename = os.path.join(output_directory, args.name + "_prediction.pkl")
+    with open(prediction_filename,'wb') as f:
+        pickle.dump(forward_strand_predictions,f)
 
-    logging.info("Write predictions to a bigwig file")
-
-    write_predictions_to_bigwig(
-        prediction_bedgraph,
-        output_filename=outfile_name_bigwig,
-        chrom_sizes_dictionary=chrom_sizes_dict,
-        chromosomes=chrom_list,
-    )
-
-    # If a cutoff file is provided, call peaks
-    if args.cutoff_file and args.skip_call_peaks is False:
-        args.input_bigwig = outfile_name_bigwig
-
-        peaks_filename = os.path.join(output_directory, args.name + "_peaks.bed")
-
-        thresh = get_threshold(
-            cutoff_file=args.cutoff_file,
-            cutoff_type=args.cutoff_type,
-            cutoff_val=args.cutoff_value,
+    with Pool(int(multiprocessing.cpu_count())) as p:
+        forward_strand_predictions = p.starmap(
+            make_stranded_predictions,
+            [
+                (
+                    model_config,
+                    regions_pool,
+                    args.signal,
+                    args.sequence,
+                    args.model,
+                    args.batch_size,
+                    False,
+                    chromosome,
+                    train_args,
+                    model_config["INTER_FUSION"],
+                    32,
+                    INPUT_CHANNELS + model_config["Extra signals channels"],
+                    INPUT_LENGTH,
+                    _extra_signals,
+                    True
+                )
+                for chromosome in chrom_list
+            ],
         )
 
-        logging.info(
-            f"Writing predictions to a BED file: {peaks_filename}"
-            + f"\n Cutoff type for Threshold: {args.cutoff_type}"
-            + f"\n Cutoff value: {args.cutoff_value}"
-            + f"\n Corresponding Threshold for Cutoff Type and Value discovered: {thresh}"
-            + f"\n Output filename: {peaks_filename}"
-        )
+    prediction_filename = os.path.join(output_directory, args.name + "_prediction_ISM.pkl")
+    with open(prediction_filename,'wb') as f:
+        pickle.dump(forward_strand_predictions,f)
 
-        logging.debug(f"Filtering predictions by threshold score.")
-        prediction_bedgraph = prediction_bedgraph[
-            prediction_bedgraph["score"] >= thresh
-        ]
-
-        # Convert the dataframe to a bedtools object
-        peaks_bedtool = pybedtools.BedTool.from_dataframe(prediction_bedgraph)
-
-        # Sort the bed intervals
-        sorted_peaks = peaks_bedtool.sort()
-
-        # Merge overlapping intervals
-        merged_peaks = sorted_peaks.merge(c=4, o="max")
-
-        # Convert bedtool object to dataframe
-        prediction_bed = merged_peaks.to_dataframe()
-
-        logging.debug(f"Writing BED file.")
-        # Write dataframe to a bed format file
-        prediction_bed.to_csv(peaks_filename, sep="\t", index=False, header=False)
-
-    # Measure end time of training
-    stopTime = timeit.default_timer()
-    totalTime = stopTime - startTime
-
-    # Output running time in a nice format.
-    mins, secs = divmod(totalTime, 60)
-    hours, mins = divmod(mins, 60)
-
-    logging.info("Total Prediction time: %d:%d:%d.\n" % (hours, mins, secs))
+    ## Write the predictions to a bigwig file and add name to args
+    # prediction_bedgraph = pd.concat(forward_strand_predictions)
+    #
+    # logging.info("Write predictions to a bigwig file")
+    #
+    # write_predictions_to_bigwig(
+    #     prediction_bedgraph,
+    #     output_filename=outfile_name_bigwig,
+    #     chrom_sizes_dictionary=chrom_sizes_dict,
+    #     chromosomes=chrom_list,
+    # )
+    #
+    # # If a cutoff file is provided, call peaks
+    # if args.cutoff_file and args.skip_call_peaks is False:
+    #     args.input_bigwig = outfile_name_bigwig
+    #
+    #     peaks_filename = os.path.join(output_directory, args.name + "_peaks.bed")
+    #
+    #     thresh = get_threshold(
+    #         cutoff_file=args.cutoff_file,
+    #         cutoff_type=args.cutoff_type,
+    #         cutoff_val=args.cutoff_value,
+    #     )
+    #
+    #     logging.info(
+    #         f"Writing predictions to a BED file: {peaks_filename}"
+    #         + f"\n Cutoff type for Threshold: {args.cutoff_type}"
+    #         + f"\n Cutoff value: {args.cutoff_value}"
+    #         + f"\n Corresponding Threshold for Cutoff Type and Value discovered: {thresh}"
+    #         + f"\n Output filename: {peaks_filename}"
+    #     )
+    #
+    #     logging.debug(f"Filtering predictions by threshold score.")
+    #     prediction_bedgraph = prediction_bedgraph[
+    #         prediction_bedgraph["score"] >= thresh
+    #     ]
+    #
+    #     # Convert the dataframe to a bedtools object
+    #     peaks_bedtool = pybedtools.BedTool.from_dataframe(prediction_bedgraph)
+    #
+    #     # Sort the bed intervals
+    #     sorted_peaks = peaks_bedtool.sort()
+    #
+    #     # Merge overlapping intervals
+    #     merged_peaks = sorted_peaks.merge(c=4, o="max")
+    #
+    #     # Convert bedtool object to dataframe
+    #     prediction_bed = merged_peaks.to_dataframe()
+    #
+    #     logging.debug(f"Writing BED file.")
+    #     # Write dataframe to a bed format file
+    #     prediction_bed.to_csv(peaks_filename, sep="\t", index=False, header=False)
+    #
+    # # Measure end time of training
+    # stopTime = timeit.default_timer()
+    # totalTime = stopTime - startTime
+    #
+    # # Output running time in a nice format.
+    # mins, secs = divmod(totalTime, 60)
+    # hours, mins = divmod(mins, 60)
+    #
+    # logging.info("Total Prediction time: %d:%d:%d.\n" % (hours, mins, secs))

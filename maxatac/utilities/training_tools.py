@@ -93,11 +93,10 @@ class MaxATACModel(object):
         self.model_config = model_config
         self.seed = seed
         self.inference=inference
-        if self.inference==False:
-            self.output_directory = get_dir(output_directory)
-            self.tensor_board_log_dir = get_dir(
-                path.join(self.output_directory, "tensorboard")
-            )
+        self.output_directory = get_dir(output_directory)
+        self.tensor_board_log_dir = get_dir(
+            path.join(self.output_directory, "tensorboard")
+        )
         self.model_filename = prefix + "_{epoch}" + ".h5"
         self.results_location = path.join(self.output_directory, self.model_filename)
         self.log_location = replace_extension(

@@ -17,7 +17,8 @@ with Mute():
         load_multiple_bigwig,
     )
     from maxatac.utilities.training_tools import get_input_matrix, MaxATACModel
-
+import copy, pickle
+import tqdm
 
 def sortChroms(chrom):
     """Sort a list of chromosomes based on a specific order
@@ -237,6 +238,63 @@ def create_prediction_regions(
 
     return df
 
+def create_prediction_regions_ISM(
+    chromosomes: list,
+    chrom_sizes: dict,
+    blacklist: str,
+    peaks,
+    windows,
+    step_size: int = 256,
+    region_length: int = INPUT_LENGTH,
+):
+    """Create whole genome or chromosome prediction regions
+
+    Args:
+        chromosomes (list): List of chromosomes to create prediction regions for
+        chrom_sizes (dict): A dictionary of chromosome sizes
+        blacklist (str): Path to the blacklist BED file
+        peaks (): Path to the bed file of intervals to center predictions on
+        windows (): Path to the bed file of intervals to use for prediction windows. These will be intersected with
+        step_size (int, optional): The step size to use for sliding windows. Defaults to 256.
+        region_length (int, optional): The region length for prediction. Defaults to INPUT_LENGTH.
+
+    Returns:
+        pd.DataFrame : A dataframe of regions that are compatible with the model for making predictions
+
+    Example:
+
+    >>> roi_df = create_prediction_regions(["chr1"], "hg38.chrom.sizes", "hg38.blacklist.bed")
+    """
+
+    if peaks:
+        logging.info(
+            f"Limiting prediction windows to regions overlapping intervals in peaks file: {peaks}"
+        )
+        logging.debug(f"Create BedTool from file: {peaks}")
+        peaks_bt = pybedtools.BedTool(peaks)
+
+
+        final_windows = peaks_bt
+
+    # Create a dataframe from the BedTools object
+    logging.debug(f"Convert BedTool of final prediction windows to pandas DataFrame.")
+    df = final_windows.to_dataframe()
+
+    # Rename the column
+    logging.debug(f"Rename columns.")
+    df.columns = ["chr", "start", "stop"]
+
+    # Filter for specific chroms
+    logging.debug(f"Filter for chromosomes in {chromosomes}")
+    df = df[df["chr"].isin(chromosomes)]
+
+    # Reset index so that it goes from 0-end in order
+    logging.debug(f"Reset index.")
+    df = df.reset_index(drop=True)
+
+    return df
+
+
 
 class PredictionDataGenerator(tf.keras.utils.Sequence):
     def __init__(
@@ -371,6 +429,7 @@ class PredictionDataGenerator_tfds(tf.keras.utils.Sequence):
         use_complement=False,
         inter_fusion=False,
         extra_signals=[],
+        ISM=False
     ):
         """
         Initialize the training generator. This is a keras sequence class object. It is used
@@ -499,6 +558,7 @@ def make_stranded_predictions(
     input_channels: int = INPUT_CHANNELS,
     input_length: int = INPUT_LENGTH,
     extra_signals: list = [],
+    ISM=False
 ):
     chr_roi_pool = roi_pool[roi_pool["chr"] == chromosome].copy()
 
@@ -520,7 +580,6 @@ def make_stranded_predictions(
             dense=train_args["dense"],
             weights=model,
             inter_fusion=inter_fusion,
-            inference=True
         )
         nn_model = maxatac_model.nn_model
 
@@ -538,47 +597,79 @@ def make_stranded_predictions(
         extra_signals=extra_signals,
     )
 
-    logging.info("Making predictions")
 
-    predictions = nn_model.predict(data_generator)
+
+    _data=list(data_generator) # 1 sample length width: 1 800 1024 7
+    # ISM variation
+    print(np.shape(_data))
+
+    _sample_size=np.shape(_data)[1]
+    _seq_length=np.shape(_data)[2]
+    _allele_size=4
+
+    if ISM:
+        _ISM_data_copies=[copy.copy(_data)] * (_seq_length *_allele_size) # 1024 x 4, 1, 800, 1024, 7
+        _ISM_data_copies=np.squeeze(np.array(_ISM_data_copies)) # 4096, 800, 1024, 7
+        for _s in tqdm.tqdm(range(_sample_size)):
+            for _l in range(_seq_length):
+                for _i in range(_allele_size):
+                    _ISM_data_copies[int(_l * _allele_size + _i)][_s][_l, 0] = 0
+                    _ISM_data_copies[int(_l * _allele_size + _i)][_s][_l, 1] = 0
+                    _ISM_data_copies[int(_l * _allele_size + _i)][_s][_l, 2] = 0
+                    _ISM_data_copies[int(_l * _allele_size + _i)][_s][_l, 3] = 0
+                    _ISM_data_copies[int(_l * _allele_size + _i)][_s][_l, _i] = 1
+
+        # 4096 2 1024 7
+        _ISM_data_copies=np.moveaxis(_ISM_data_copies,0,1) # sample, length x 4 , length, 7
+        _ISM_data_copies=np.reshape(_ISM_data_copies,(-1,1024,7)) # sample x length x 4, length, 7
+        # with open('tmp_data','wb') as f:
+        #     pickle.dump(_ISM_data_copies,f)
+    else:
+        _ISM_data_copies=_data # 2 1024 7
+
+    logging.info("Making predictions")
+    predictions = nn_model.predict(_ISM_data_copies,batch_size=1) # sample x 4096, 32
+    print(np.shape(predictions))
 
     logging.info("Parsing results into pandas dataframe")
 
     predictions_df = pd.DataFrame(data=predictions, index=None, columns=None)
 
-    if use_complement:
-        # If reverse + complement used, reverse the columns of the pandas df in order to
-        predictions_df = predictions_df[predictions_df.columns[::-1]]
+    # if use_complement:
+    #     # If reverse + complement used, reverse the columns of the pandas df in order to
+    #     predictions_df = predictions_df[predictions_df.columns[::-1]]
 
-    predictions_df["chr"] = chr_roi_pool["chr"]
-    predictions_df["start"] = chr_roi_pool["start"]
-    predictions_df["stop"] = chr_roi_pool["stop"]
+    # predictions_df["chr"] = chr_roi_pool["chr"]
+    # predictions_df["start"] = chr_roi_pool["start"]
+    # predictions_df["stop"] = chr_roi_pool["stop"]
 
-    # Create BedTool object from the dataframe
-    coordinates_dataframe = pybedtools.BedTool.from_dataframe(
-        predictions_df[["chr", "start", "stop"]]
-    )
+    return predictions_df
 
-    # Window the intervals into 32 bins
-    windowed_coordinates = coordinates_dataframe.window_maker(
-        b=coordinates_dataframe, n=number_intervals
-    )
-
-    # Create a dataframe from the BedTool object
-    windowed_coordinates_dataframe = windowed_coordinates.to_dataframe()
-
-    # Drop all columns except those that have scores in them
-    scores_dataframe = predictions_df.drop(["chr", "start", "stop"], axis=1)
-
-    # Take the scores and reshape them into a column of the pandas dataframe
-    windowed_coordinates_dataframe["score"] = scores_dataframe.to_numpy().flatten()
-
-    # Rename the columns of the dataframe
-    windowed_coordinates_dataframe.columns = ["chr", "start", "stop", "score"]
-
-    # Get the mean of all sliding window predicitons
-    windowed_coordinates_dataframe = windowed_coordinates_dataframe.groupby(
-        ["chr", "start", "stop"], as_index=False
-    ).mean()
-
-    return windowed_coordinates_dataframe
+    # # Create BedTool object from the dataframe
+    # coordinates_dataframe = pybedtools.BedTool.from_dataframe(
+    #     predictions_df[["chr", "start", "stop"]]
+    # )
+    #
+    # # Window the intervals into 32 bins
+    # windowed_coordinates = coordinates_dataframe.window_maker(
+    #     b=coordinates_dataframe, n=number_intervals
+    # )
+    #
+    # # Create a dataframe from the BedTool object
+    # windowed_coordinates_dataframe = windowed_coordinates.to_dataframe()
+    #
+    # # Drop all columns except those that have scores in them
+    # scores_dataframe = predictions_df.drop(["chr", "start", "stop"], axis=1)
+    #
+    # # Take the scores and reshape them into a column of the pandas dataframe
+    # windowed_coordinates_dataframe["score"] = scores_dataframe.to_numpy().flatten()
+    #
+    # # Rename the columns of the dataframe
+    # windowed_coordinates_dataframe.columns = ["chr", "start", "stop", "score"]
+    #
+    # # Get the mean of all sliding window predicitons
+    # windowed_coordinates_dataframe = windowed_coordinates_dataframe.groupby(
+    #     ["chr", "start", "stop"], as_index=False
+    # ).mean()
+    #
+    # return windowed_coordinates_dataframe
