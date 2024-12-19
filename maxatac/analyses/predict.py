@@ -82,7 +82,8 @@ def run_prediction(args):
     # Open the training args JSON file
     with open(args.train_json, "r") as f:
         train_args = json.load(f)
-
+    # override training's output_directory
+    train_args['output'] = output_directory
     # Open the model_config JSON file
     with open(args.model_config, "r") as f:
         model_config = json.load(f)

@@ -73,6 +73,7 @@ class MaxATACModel(object):
         interpret_cell_type="",
         inter_fusion=False,
         deterministic=False,
+        inference=False
     ):
         """
         Initialize the maxATAC model with the input parameters and architecture
@@ -91,14 +92,15 @@ class MaxATACModel(object):
         self.arch = arch
         self.model_config = model_config
         self.seed = seed
+        self.inference=inference
         self.output_directory = get_dir(output_directory)
+        self.tensor_board_log_dir = get_dir(
+            path.join(self.output_directory, "tensorboard")
+        )
         self.model_filename = prefix + "_{epoch}" + ".h5"
         self.results_location = path.join(self.output_directory, self.model_filename)
         self.log_location = replace_extension(
             remove_tags(self.results_location, "_{epoch}"), ".csv"
-        )
-        self.tensor_board_log_dir = get_dir(
-            path.join(self.output_directory, "tensorboard")
         )
         self.threads = threads
         self.training_history = ""
@@ -1457,17 +1459,17 @@ class ROIPool(object):
         # determine unique non-overlapping regions from both CHIP & ATAC ROIs
         _ROI_pool_CHIP = copy.copy(self.ROI_pool_CHIP)
         _ROI_pool_bedtool_CHIP = pybedtools.BedTool.from_dataframe(_ROI_pool_CHIP)
-        _ROI_pool_bedtool_CHIP_merged = _ROI_pool_bedtool_CHIP.sort(
+        self._ROI_pool_bedtool_CHIP_merged = _ROI_pool_bedtool_CHIP.sort(
             chrThenSizeA=True
         ).merge()
 
         _ROI_pool_ATAC = copy.copy(self.ROI_pool_ATAC)
         _ROI_pool_bedtool_ATAC = pybedtools.BedTool.from_dataframe(_ROI_pool_ATAC)
-        _ROI_pool_bedtool_ATAC_merged = _ROI_pool_bedtool_ATAC.sort(
+        self._ROI_pool_bedtool_ATAC_merged = _ROI_pool_bedtool_ATAC.sort(
             chrThenSizeA=True
         ).merge()
 
-        return len(_ROI_pool_bedtool_CHIP_merged), len(_ROI_pool_bedtool_ATAC_merged)
+        return len(self._ROI_pool_bedtool_CHIP_merged), len(self._ROI_pool_bedtool_ATAC_merged)
 
     def __import_roi_pool__(self, shuffle=False):
         """

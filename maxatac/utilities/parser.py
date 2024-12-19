@@ -443,6 +443,19 @@ def get_parser():
         help="Cell type to pull from meta file",
     )
 
+    predict_parser.add_argument("--threads",
+                              dest="threads",
+                              type=int,
+                              default=24,
+                              help="Number of processes to run prediction in parallel. Default: 24"
+                              )
+
+    predict_parser.add_argument("--cpu_only",
+                              dest="cpu_only",
+                              action="store_true",
+                              default=False,
+                              help="Whether to use cpu only mode to run inference. Default: False"
+                              )
     #############################################
     # Train parser
     #############################################
