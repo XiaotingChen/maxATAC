@@ -520,6 +520,7 @@ def make_stranded_predictions(
             dense=train_args["dense"],
             weights=model,
             inter_fusion=inter_fusion,
+            inference=True
         )
         nn_model = maxatac_model.nn_model
 

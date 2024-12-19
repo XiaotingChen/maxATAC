@@ -82,7 +82,8 @@ def run_prediction(args):
     # Open the training args JSON file
     with open(args.train_json, "r") as f:
         train_args = json.load(f)
-
+    # override training's output_directory
+    train_args['output'] = output_directory
     # Open the model_config JSON file
     with open(args.model_config, "r") as f:
         model_config = json.load(f)
@@ -140,29 +141,84 @@ def run_prediction(args):
     else:
         _extra_signals=[]
 
-    with Pool(int(multiprocessing.cpu_count())) as p:
-        forward_strand_predictions = p.starmap(
-            make_stranded_predictions,
-            [
-                (
-                    model_config,
-                    regions_pool,
-                    args.signal,
-                    args.sequence,
-                    args.model,
-                    args.batch_size,
-                    False,
-                    chromosome,
-                    train_args,
-                    model_config["INTER_FUSION"],
-                    32,
-                    INPUT_CHANNELS + model_config["Extra signals channels"],
-                    INPUT_LENGTH,
-                    _extra_signals,
-                )
-                for chromosome in chrom_list
-            ],
-        )
+    if args.cpu_only:
+        with Pool(int(args.threads)) as p:
+            forward_strand_predictions = p.starmap(
+                make_stranded_predictions,
+                [
+                    (
+                        model_config,
+                        regions_pool,
+                        args.signal,
+                        args.sequence,
+                        args.model,
+                        args.batch_size,
+                        False,
+                        chromosome,
+                        train_args,
+                        model_config["INTER_FUSION"],
+                        32,
+                        INPUT_CHANNELS + model_config["Extra signals channels"],
+                        INPUT_LENGTH,
+                        _extra_signals,
+                    )
+                    for chromosome in chrom_list
+                ],
+            )
+    else:
+        forward_strand_predictions=[]
+        for _idx,chromosome in enumerate(chrom_list):
+            with Pool(int(args.threads)) as p:
+                if _idx==0:
+                    forward_strand_predictions=p.starmap(
+                            make_stranded_predictions,
+                            [
+                                (
+                                    model_config,
+                                    regions_pool,
+                                    args.signal,
+                                    args.sequence,
+                                    args.model,
+                                    args.batch_size,
+                                    False,
+                                    chromosome,
+                                    train_args,
+                                    model_config["INTER_FUSION"],
+                                    32,
+                                    INPUT_CHANNELS + model_config["Extra signals channels"],
+                                    INPUT_LENGTH,
+                                    _extra_signals,
+                                )
+                            ],
+                        )
+                else:
+                    forward_strand_predictions=pd.concat(
+                                [
+                                    forward_strand_predictions,
+                                    p.starmap(
+                                      make_stranded_predictions,
+                                      [
+                                          (
+                                              model_config,
+                                              regions_pool,
+                                              args.signal,
+                                              args.sequence,
+                                              args.model,
+                                              args.batch_size,
+                                              False,
+                                              chromosome,
+                                              train_args,
+                                              model_config["INTER_FUSION"],
+                                              32,
+                                              INPUT_CHANNELS + model_config["Extra signals channels"],
+                                              INPUT_LENGTH,
+                                              _extra_signals,
+                                          )
+                                      ],
+                                    )
+                                ],axis=0
+                    )
+
 
     # Write the predictions to a bigwig file and add name to args
     prediction_bedgraph = pd.concat(forward_strand_predictions)
