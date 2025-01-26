@@ -443,6 +443,14 @@ def get_parser():
         help="Cell type to pull from meta file",
     )
 
+    predict_parser.add_argument(
+        "--ISM",
+        dest="ISM",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Whether perform ISM analysis",
+    )
     #############################################
     # Train parser
     #############################################

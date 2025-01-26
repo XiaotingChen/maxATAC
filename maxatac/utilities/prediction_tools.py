@@ -622,11 +622,12 @@ def make_stranded_predictions(
         # 4096 2 1024 7
         _ISM_data_copies=np.moveaxis(_ISM_data_copies,0,1) # sample, length x 4 , length, 7
         _ISM_data_copies=np.reshape(_ISM_data_copies,(-1,1024,7)) # sample x length x 4, length, 7
-        # with open('tmp_data','wb') as f:
+        # with open('tmp_data_ISM','wb') as f:
         #     pickle.dump(_ISM_data_copies,f)
     else:
         _ISM_data_copies=_data # 2 1024 7
-
+        with open('tmp_data_ref','wb') as f:
+            pickle.dump(_ISM_data_copies,f)
     logging.info("Making predictions")
     predictions = nn_model.predict(_ISM_data_copies,batch_size=1) # sample x 4096, 32
     print(np.shape(predictions))

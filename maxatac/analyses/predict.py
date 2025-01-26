@@ -172,34 +172,35 @@ def run_prediction(args):
     with open(prediction_filename,'wb') as f:
         pickle.dump(forward_strand_predictions,f)
 
-    with Pool(int(multiprocessing.cpu_count())) as p:
-        forward_strand_predictions = p.starmap(
-            make_stranded_predictions,
-            [
-                (
-                    model_config,
-                    regions_pool,
-                    args.signal,
-                    args.sequence,
-                    args.model,
-                    args.batch_size,
-                    False,
-                    chromosome,
-                    train_args,
-                    model_config["INTER_FUSION"],
-                    32,
-                    INPUT_CHANNELS + model_config["Extra signals channels"],
-                    INPUT_LENGTH,
-                    _extra_signals,
-                    True
-                )
-                for chromosome in chrom_list
-            ],
-        )
+    if args.ISM:
+        with Pool(int(multiprocessing.cpu_count())) as p:
+            forward_strand_predictions = p.starmap(
+                make_stranded_predictions,
+                [
+                    (
+                        model_config,
+                        regions_pool,
+                        args.signal,
+                        args.sequence,
+                        args.model,
+                        args.batch_size,
+                        False,
+                        chromosome,
+                        train_args,
+                        model_config["INTER_FUSION"],
+                        32,
+                        INPUT_CHANNELS + model_config["Extra signals channels"],
+                        INPUT_LENGTH,
+                        _extra_signals,
+                        True
+                    )
+                    for chromosome in chrom_list
+                ],
+            )
 
-    prediction_filename = os.path.join(output_directory, args.name + "_prediction_ISM.pkl")
-    with open(prediction_filename,'wb') as f:
-        pickle.dump(forward_strand_predictions,f)
+        prediction_filename = os.path.join(output_directory, args.name + "_prediction_ISM.pkl")
+        with open(prediction_filename,'wb') as f:
+            pickle.dump(forward_strand_predictions,f)
 
     ## Write the predictions to a bigwig file and add name to args
     # prediction_bedgraph = pd.concat(forward_strand_predictions)
