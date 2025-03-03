@@ -629,12 +629,15 @@ def make_stranded_predictions(
         with open('tmp_data_ref','wb') as f:
             pickle.dump(_ISM_data_copies,f)
     logging.info("Making predictions")
-    predictions = nn_model.predict(_ISM_data_copies,batch_size=1) # sample x 4096, 32
+    predictions,att_matrices = nn_model.predict(_ISM_data_copies,batch_size=1) # sample x 4096, 32
     print(np.shape(predictions))
 
     logging.info("Parsing results into pandas dataframe")
 
     predictions_df = pd.DataFrame(data=predictions, index=None, columns=None)
+
+    with open('att_matrices.pkl','wb') as f:
+        pickle.dump(att_matrices,f)
 
     # if use_complement:
     #     # If reverse + complement used, reverse the columns of the pandas df in order to

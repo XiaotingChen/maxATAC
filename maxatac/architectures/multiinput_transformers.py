@@ -647,7 +647,7 @@ def get_multiinput_transformer(
 
     # get seq_len after the conv tower
     seq_len = layer.shape[1]
-
+    tmp_att_weight_chunks=[]
     if not model_config["USE_RPE"]:
         # A positional encoding layer
         layer = get_positional_encoding(
@@ -681,8 +681,16 @@ def get_multiinput_transformer(
                 name=f"Transformer_block_{i}",
             )
             outputs = deepmind_transformer_block(layer)
+            """
+            composite of outputs
+            prediction: x_mlp5 + mha_output
+            attention weights: att_weights,
+            all intermediate outputs: (x1, x2, x3, x_mlp1, x_mlp2, x_mlp3, x_mlp4, x_mlp5),
+            """
             # logging.error(f"Length of transformer block output: {len(outputs)}")
             layer = outputs[0]
+            tmp_att_weight_chunks.append(outputs[1])
+
 
     # Final postprocessing
 
@@ -798,7 +806,7 @@ def get_multiinput_transformer(
     logging.debug("Added outputs layer: " + "\n - " + str(output_layer))
 
     # Model
-    model = Model(inputs=[_input], outputs=output_layer)
+    model = Model(inputs=[_input], outputs=[output_layer,tmp_att_weight_chunks])
 
     # lr schedule
     if model_config["COSINEDECAYRESTARTS"]:
