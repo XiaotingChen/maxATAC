@@ -174,11 +174,11 @@ def run_prepare(args):
     args.signal = os.path.join(output_dir, f"{args.name}_IS_slop{args.slop}_RP20M.bw")
 
     args.name = f"{args.name}_IS_slop{args.slop}_RP20M_minmax01"
-    args.method = "min-max"
+    # args.method = "min-max"
     args.min = 0
     args.max = False
-    args.max_percentile = 99
-    args.clip = False
+    # args.max_percentile = 99
+    # args.clip = False
 
     # Minmax normalize signal tracks
     run_normalization(args)

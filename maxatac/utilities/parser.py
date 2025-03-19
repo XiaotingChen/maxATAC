@@ -1617,6 +1617,32 @@ def get_parser():
         choices=LOG_LEVELS.keys(),
         help="Logging level. Default: " + DEFAULT_LOG_LEVEL,
     )
+
+    prepare_parser.add_argument(
+        "--clip",
+        dest="clip",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Whether to clip minmax values to the range 0,1",
+    )
+
+    prepare_parser.add_argument(
+        "--method",
+        dest="method",
+        type=str,
+        default="min-max",
+        help="The method to use for normalization",
+    )
+
+    prepare_parser.add_argument(
+        "--max_percentile",
+        dest="max_percentile",
+        type=int,
+        default=99,
+        help="The maximum percentile to use for normalization",
+    )
+
     #############################################
     # Threshold subparser
     #############################################
