@@ -140,6 +140,8 @@ def run_prediction(args):
         _extra_signals = args.extra_signals.split(",")
     else:
         _extra_signals=[]
+        if "Extra signals channels" not in model_config.keys():
+            model_config["Extra signals channels"]=0
 
     with Pool(int(multiprocessing.cpu_count())) as p:
         forward_strand_predictions = p.starmap(
