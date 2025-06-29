@@ -1872,6 +1872,29 @@ def random_shuffling_map_tf(x, y, w):
         w,
     )
 
+def left_shift_map_tf(x, y, w):
+    shift = tf.constant(512-333, dtype=tf.int32)
+    y_shift = tf.cast(tf.math.divide_no_nan(shift, OUTPUT_LENGTH), dtype=tf.int32)
+    _length = tf.shape(x)[0]
+    _dim = tf.shape(x)[1]
+
+    return (
+        tf.slice(x, begin=[shift, 0], size=[INPUT_LENGTH, _dim]),
+        tf.slice(y, begin=[y_shift], size=[OUTPUT_LENGTH]),
+        w,
+    )
+
+def right_shift_map_tf(x, y, w):
+    shift = tf.constant(512+333, dtype=tf.int32)
+    y_shift = tf.cast(tf.math.divide_no_nan(shift, OUTPUT_LENGTH), dtype=tf.int32)
+    _length = tf.shape(x)[0]
+    _dim = tf.shape(x)[1]
+
+    return (
+        tf.slice(x, begin=[shift, 0], size=[INPUT_LENGTH, _dim]),
+        tf.slice(y, begin=[y_shift], size=[OUTPUT_LENGTH]),
+        w,
+    )
 
 def no_mapping_tf(x, y, w):
     return x, y, w

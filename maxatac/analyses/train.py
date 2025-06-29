@@ -38,6 +38,9 @@ with Mute():
         generate_tfds_files,
         get_tfds_data,
         model_selection_v2,
+        peak_centric_map_tf,
+        left_shift_map_tf,
+        right_shift_map_tf
     )
     from maxatac.utilities.plot import (
         export_binary_metrics,
@@ -212,6 +215,34 @@ def run_training(args):
     valid_data_combined = valid_data_chip.concatenate(valid_data_atac)
     # chip first to avoid positive sample truncation
 
+    # left/right shift mapping and then concatenate all 3 types of train_data_chip together before determining step size
+    train_data_chip_aug=train_data_chip.map(
+                    map_func=peak_centric_map_tf,
+                    num_parallel_calls=args.threads
+                    if args.DETERMINISTIC
+                    else tensorflow.data.AUTOTUNE,
+                    deterministic=args.DETERMINISTIC,
+                )
+    train_data_chip_aug=train_data_chip_aug.concatenate(
+        train_data_chip.map(
+                    map_func=left_shift_map_tf,
+                    num_parallel_calls=args.threads
+                    if args.DETERMINISTIC
+                    else tensorflow.data.AUTOTUNE,
+                    deterministic=args.DETERMINISTIC,
+                )
+    )
+    train_data_chip_aug=train_data_chip_aug.concatenate(
+        train_data_chip.map(
+                    map_func=right_shift_map_tf,
+                    num_parallel_calls=args.threads
+                    if args.DETERMINISTIC
+                    else tensorflow.data.AUTOTUNE,
+                    deterministic=args.DETERMINISTIC,
+                )
+    )
+    train_data_chip=train_data_chip_aug
+
     # re-assign train_steps_per_epoch_v2 here
     train_steps_per_epoch_v2 = int(
         train_data_chip.cardinality().numpy()
@@ -232,18 +263,28 @@ def run_training(args):
                 / train_data_atac.cardinality().numpy()
             )
         )
-
+    # override max epoch when training sample upper bound is available, again here for augmented data
+    if args.TRAINING_SAMPLE_UPPER_BOUND != 0:
+        args.epochs = int(
+            min(
+                args.epochs,
+                int(
+                    args.TRAINING_SAMPLE_UPPER_BOUND
+                    // (train_steps_per_epoch_v2 * args.batch_size)
+                ),
+            )
+        )
     train_data = (
         tensorflow.data.Dataset.sample_from_datasets(
             [
                 train_data_chip
-                .map(
-                    map_func=dataset_mapping[args.SHUFFLE_AUGMENTATION],
-                    num_parallel_calls=args.threads
-                    if args.DETERMINISTIC
-                    else tensorflow.data.AUTOTUNE,
-                    deterministic=args.DETERMINISTIC,
-                )
+                # .map(
+                #     map_func=dataset_mapping[args.SHUFFLE_AUGMENTATION],
+                #     num_parallel_calls=args.threads
+                #     if args.DETERMINISTIC
+                #     else tensorflow.data.AUTOTUNE,
+                #     deterministic=args.DETERMINISTIC,
+                # )
                 .cache()
                 .shuffle(
                     train_data_chip.cardinality().numpy(),
