@@ -95,7 +95,7 @@ setup(
         "pysam",
         "seaborn",
         "pytest",
-        "tensorflow_addons"
+        # "tensorflow_addons"
     ],
     zip_safe=False,
     scripts=["maxatac/bin/maxatac"],

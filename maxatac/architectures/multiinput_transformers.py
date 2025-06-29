@@ -70,7 +70,7 @@ with Mute():
         get_residual_layer,
     )
     from maxatac.architectures.attention_module_TF import TransformerBlock
-    import tensorflow_addons as tfa
+    # import tensorflow_addons as tfa
     from tensorflow.keras.metrics import MeanMetricWrapper
 
 
