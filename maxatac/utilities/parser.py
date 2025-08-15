@@ -1038,6 +1038,13 @@ def get_parser():
         help="Set training process to behave deterministically.",
     )
 
+    train_parser.add_argument(
+        "--DROP_SAMPLE_WEIGHT",
+        dest="DROP_SAMPLE_WEIGHT",
+        action="store_true",
+        default=False,
+        help="Drop sample weight from generated cache file.",
+    )
     #############################################
     # Normalize parser
     #############################################
@@ -1823,6 +1830,7 @@ def parse_arguments(argsl, cwd_abs_path=None):
                 "SUPPRESS_CELL_TYPE_SPECIFIC_TN_WEIGHTS",
                 "OPTIMIZER",
                 "DETERMINISTIC",
+                "DROP_SAMPLE_WEIGHT"
             ],
             cwd_abs_path,
         )

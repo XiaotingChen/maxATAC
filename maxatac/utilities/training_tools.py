@@ -1847,18 +1847,23 @@ def update_model_config_from_args(model_config, args, keys):
     return model_config
 
 
-def peak_centric_map_tf(x, y, w):
+def peak_centric_map_tf(x, y, w=None):
     shift = tf.constant(512, dtype=tf.int32)
     y_shift = tf.cast(tf.math.divide_no_nan(shift, OUTPUT_LENGTH), dtype=tf.int32)
     _length = tf.shape(x)[0]
     _dim = tf.shape(x)[1]
 
-    return (
-        tf.slice(x, begin=[shift, 0], size=[INPUT_LENGTH, _dim]),
-        tf.slice(y, begin=[y_shift], size=[OUTPUT_LENGTH]),
-        w,
-    )
-
+    if w==None:
+        return (
+            tf.slice(x, begin=[shift, 0], size=[INPUT_LENGTH, _dim]),
+            tf.slice(y, begin=[y_shift], size=[OUTPUT_LENGTH])
+        )
+    else:
+        return (
+            tf.slice(x, begin=[shift, 0], size=[INPUT_LENGTH, _dim]),
+            tf.slice(y, begin=[y_shift], size=[OUTPUT_LENGTH]),
+            w,
+        )
 
 def random_shuffling_map_tf(x, y, w):
     shift = tf.random.uniform([1], minval=0, maxval=INPUT_LENGTH, dtype=tf.int32)[0]
@@ -1876,6 +1881,8 @@ def random_shuffling_map_tf(x, y, w):
 def no_mapping_tf(x, y, w):
     return x, y, w
 
+def drop_sample_weight_map_tf(x, y, w):
+    return  x,y
 
 dataset_mapping = {
     "random": random_shuffling_map_tf,

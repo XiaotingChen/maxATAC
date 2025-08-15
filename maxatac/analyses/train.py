@@ -38,6 +38,7 @@ with Mute():
         generate_tfds_files,
         get_tfds_data,
         model_selection_v2,
+        drop_sample_weight_map_tf
     )
     from maxatac.utilities.plot import (
         export_binary_metrics,
@@ -175,6 +176,7 @@ def run_training(args):
                     ),
                 )
             )
+            args.epochs=int(max(1,args.epochs)) # at least 1 epoch
 
         # annotate CHIP ROI with additional sample weight adjustment
         train_examples.ROI_pool_CHIP = CHIP_sample_weight_adjustment(
@@ -232,6 +234,30 @@ def run_training(args):
                 / train_data_atac.cardinality().numpy()
             )
         )
+
+    # whether to drop sample weights from generated cache file
+    if args.DROP_SAMPLE_WEIGHT:
+        train_data_chip=train_data_chip.map(
+                map_func=drop_sample_weight_map_tf,
+                num_parallel_calls=args.threads
+                if args.DETERMINISTIC
+                else tensorflow.data.AUTOTUNE,
+                deterministic=args.DETERMINISTIC,
+            )
+        train_data_atac=train_data_atac.map(
+                map_func=drop_sample_weight_map_tf,
+                num_parallel_calls=args.threads
+                if args.DETERMINISTIC
+                else tensorflow.data.AUTOTUNE,
+                deterministic=args.DETERMINISTIC,
+            )
+        valid_data_combined=valid_data_combined.map(
+                map_func=drop_sample_weight_map_tf,
+                num_parallel_calls=args.threads
+                if args.DETERMINISTIC
+                else tensorflow.data.AUTOTUNE,
+                deterministic=args.DETERMINISTIC,
+            )
 
     train_data = (
         tensorflow.data.Dataset.sample_from_datasets(
