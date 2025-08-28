@@ -116,7 +116,8 @@ def run_training(args):
                               chroms=args.tchroms,
                               batch_size=args.batch_size,
                               shuffle_cell_type=args.shuffle_cell_type,
-                              rev_comp_train=args.rev_comp
+                              rev_comp_train=args.rev_comp,
+                              extra_signals_channels = maxatac_model.extra_signals_channels,
                               )
 
     # Create keras.utils.sequence object from training generator
@@ -155,7 +156,8 @@ def run_training(args):
                             chroms=args.vchroms,
                             batch_size=args.batch_size,
                             shuffle_cell_type=args.shuffle_cell_type,
-                            rev_comp_train=args.rev_comp
+                            rev_comp_train=args.rev_comp,
+                            extra_signals_channels=maxatac_model.extra_signals_channels,
                             )
 
     # Create keras.utils.sequence object from validation generator

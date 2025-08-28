@@ -14,7 +14,8 @@ import glob
 from maxatac.architectures.dcnn import get_dilated_cnn
 from maxatac.utilities.constants import BP_RESOLUTION, BATCH_SIZE, CHR_POOL_SIZE, INPUT_LENGTH, INPUT_CHANNELS, \
     BP_ORDER, TRAIN_SCALE_SIGNAL
-from maxatac.utilities.genome_tools import load_bigwig, load_2bit, get_one_hot_encoded, build_chrom_sizes_dict
+from maxatac.utilities.genome_tools import load_bigwig, load_2bit, get_one_hot_encoded, build_chrom_sizes_dict, \
+    load_multiple_bigwig
 from maxatac.utilities.system_tools import get_dir, remove_tags, replace_extension
 
 
@@ -71,7 +72,7 @@ class MaxATACModel(object):
         self.dense = dense
         self.weights = weights
         self.target_scale_factor = target_scale_factor
-
+        #self.model_config={}
         # Set the random seed for the model
         random.seed(seed)
 
@@ -82,6 +83,15 @@ class MaxATACModel(object):
         self.cell_types = self.meta_dataframe["Cell_Line"].unique().tolist()
 
         self.train_tf = self.meta_dataframe["TF"].unique()[0]
+
+        if "Extra_Signal_Files" in self.meta_dataframe.columns:
+            self.extra_signals_channels = len(
+                self.meta_dataframe.iloc[0]["Extra_Signal_Files"].split(",")
+            )
+            #self.model_config["Extra signals channels"] = self.extra_signals_channels
+        else:
+            self.extra_signals_channels = 0
+            #self.model_config["Extra signals channels"] = 0
 
         self.nn_model = self.__get_model()
 
@@ -102,7 +112,8 @@ class MaxATACModel(object):
             return get_dilated_cnn(output_activation=self.output_activation,
                                    target_scale_factor=self.target_scale_factor,
                                    dense_b=self.dense,
-                                   weights=self.weights
+                                   weights=self.weights,
+                                   extra_signals_channels=self.extra_signals_channels
                                    )
         else:
             sys.exit("Model Architecture not specified correctly. Please check")
@@ -119,8 +130,8 @@ def DataGenerator(
         target_scale_factor=1,
         batch_size=BATCH_SIZE,
         shuffle_cell_type=False,
-        rev_comp_train=False
-
+        rev_comp_train=False,
+        extra_signals_channels=0,
 ):
     """
     Initiate a data generator that will yield a batch of examples for training. This generator will mix samples from a
@@ -172,7 +183,8 @@ def DataGenerator(
                                        regions_pool=train_random_regions_pool,
                                        bp_resolution=bp_resolution,
                                        target_scale_factor=target_scale_factor,
-                                       rev_comp_train=rev_comp_train
+                                       rev_comp_train=rev_comp_train,
+                                       extra_signals_channels=extra_signals_channels
                                        )
 
     # Initialize the ROI generator
@@ -184,7 +196,8 @@ def DataGenerator(
                                bp_resolution=bp_resolution,
                                target_scale_factor=target_scale_factor,
                                shuffle_cell_type=shuffle_cell_type,
-                               rev_comp_train=rev_comp_train
+                               rev_comp_train=rev_comp_train,
+                               extra_signals_channels=extra_signals_channels
                                )
 
     while True:
@@ -217,7 +230,8 @@ def get_input_matrix(signal_stream,
                      cols=INPUT_LENGTH,
                      bp_order=BP_ORDER,
                      use_complement=False,
-                     reverse_matrix=False
+                     reverse_matrix=False,
+                     extra_signals_streams=[],
                      ):
     """
     Get a matrix of values from the corresponding genomic position. You can supply whether you want to use the
@@ -250,8 +264,17 @@ def get_input_matrix(signal_stream,
         input_matrix[n, :] = get_one_hot_encoded(target_sequence, bp)
 
     signal_array = np.array(signal_stream.values(chromosome, start, end))
+    extra_signals_arrays = np.array(
+        [
+            np.array(_signal_stream.values(chromosome, start, end))
+            for _signal_stream in extra_signals_streams
+        ]
+    )
 
     input_matrix[4, :] = signal_array
+
+    if input_matrix.shape[0] > INPUT_CHANNELS:
+        input_matrix[INPUT_CHANNELS:, :] = extra_signals_arrays
 
     # If reverse_matrix then reverse the matrix. This changes the left to right orientation.
     if reverse_matrix:
@@ -305,7 +328,8 @@ def create_roi_batch(sequence,
                      bp_resolution=1,
                      target_scale_factor=1,
                      shuffle_cell_type=False,
-                     rev_comp_train=False
+                     rev_comp_train=False,
+                     extra_signals_channels=0
                      ):
     """
     Create a batch of examples from regions of interest. The batch size is defined by n_roi. This code will randomly
@@ -355,6 +379,11 @@ def create_roi_batch(sequence,
 
             signal = meta_row.loc[0, 'ATAC_Signal_File']
             binding = meta_row.loc[0, 'Binding_File']
+            if extra_signals_channels > 0:
+                extra_signals = meta_row.loc[0, "Extra_Signal_Files"].split(",")
+                extra_signals_streams = load_multiple_bigwig(extra_signals)
+            else:
+                extra_signals_streams = []
 
             # Choose whether to use the reverse complement of the region
             if rev_comp_train:
@@ -375,7 +404,9 @@ def create_roi_batch(sequence,
                                                 start=start,
                                                 end=end,
                                                 use_complement=rev_comp,
-                                                reverse_matrix=rev_comp
+                                                reverse_matrix=rev_comp,
+                                                rows=INPUT_CHANNELS + extra_signals_channels,
+                                                extra_signals_streams=extra_signals_streams
                                                 )
 
                 # Append the sample to the inputs batch.
@@ -403,7 +434,8 @@ def create_random_batch(
         regions_pool,
         bp_resolution=1,
         target_scale_factor=1,
-        rev_comp_train=False
+        rev_comp_train=False,
+        extra_signals_channels=0
 ):
     """
     This function will create a batch of examples that are randomly generated. This batch of data is created the same
@@ -422,6 +454,11 @@ def create_random_batch(
 
             signal = meta_row.loc[0, 'ATAC_Signal_File']
             binding = meta_row.loc[0, 'Binding_File']
+            if extra_signals_channels > 0:
+                extra_signals = meta_row.loc[0, "Extra_Signal_Files"].split(",")
+                extra_signals_streams = load_multiple_bigwig(extra_signals)
+            else:
+                extra_signals_streams = []
 
             with \
                     load_2bit(sequence) as sequence_stream, \
@@ -440,7 +477,9 @@ def create_random_batch(
                                                 start=seq_start,
                                                 end=seq_end,
                                                 use_complement=rev_comp,
-                                                reverse_matrix=rev_comp
+                                                reverse_matrix=rev_comp,
+                                                rows=INPUT_CHANNELS + extra_signals_channels,
+                                                extra_signals_streams=extra_signals_streams
                                                 )
 
                 inputs_batch.append(input_matrix)
@@ -636,7 +675,7 @@ class ROIPool(object):
                                          index=self.meta_dataframe.Cell_Line).to_dict()
 
         # You must generate the ROI pool before you can get the final shape
-        self.atac_roi_pool = self.__get_roi_pool__(self.atac_dictionary, "ATAC", )
+        self.atac_roi_pool = self.__get_roi_pool__(self.atac_dictionary, "ATAC")
         self.chip_roi_pool = self.__get_roi_pool__(self.chip_dictionary, "CHIP")
 
         # Get the number of rows in the dataframe for each pool

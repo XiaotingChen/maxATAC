@@ -206,7 +206,8 @@ def get_dilated_cnn(
         adam_beta_2=ADAM_BETA_2,
         target_scale_factor=1,
         dense_b=False,
-        weights=None
+        weights=None,
+        extra_signals_channels=0
 ):
     """
     If weights are provided they will be loaded into created model
@@ -214,7 +215,7 @@ def get_dilated_cnn(
     logging.debug("Building Dilated CNN model")
 
     # Inputs
-    input_layer = Input(shape=(input_length, input_channels))
+    input_layer = Input(shape=(input_length, input_channels+extra_signals_channels))
 
     # Temporary variables
     layer = input_layer  # redefined in encoder/decoder loops
@@ -283,10 +284,10 @@ def get_dilated_cnn(
 
     model.compile(
         optimizer=Adam(
-            lr=adam_learning_rate,
+            learning_rate=adam_learning_rate,
             beta_1=adam_beta_1,
             beta_2=adam_beta_2,
-            decay=adam_decay
+            weight_decay=adam_decay
         ),
         loss=loss_function,
         metrics=[dice_coef]
