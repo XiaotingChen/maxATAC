@@ -250,7 +250,7 @@ def get_input_matrix(signal_stream,
 
     :return: a matrix (rows x cols) of values from the input bigwig files
     """
-
+    #print("row size: {}".format(rows))
     input_matrix = np.zeros((rows, cols))
     for n, bp in enumerate(bp_order):
         # Get the sequence from the interval of interest

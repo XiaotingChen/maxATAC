@@ -10,7 +10,7 @@ from maxatac.utilities.system_tools import Mute
 
 with Mute():
     from tensorflow.keras.models import load_model
-    from maxatac.utilities.genome_tools import load_bigwig, load_2bit, dump_bigwig
+    from maxatac.utilities.genome_tools import load_bigwig, load_2bit, dump_bigwig, load_multiple_bigwig
     from maxatac.utilities.training_tools import get_input_matrix
 
 
@@ -229,7 +229,8 @@ class PredictionDataGenerator(tf.keras.utils.Sequence):
                  input_channels: int = INPUT_CHANNELS,
                  input_length: int = INPUT_LENGTH,
                  batch_size=32,
-                 use_complement=False
+                 use_complement=False,
+                 extra_signals=None
                  ):
         """
         Initialize the training generator. This is a keras sequence class object. It is used
@@ -253,6 +254,7 @@ class PredictionDataGenerator(tf.keras.utils.Sequence):
         self.use_complement = use_complement
 
         self.predict_roi_df.reset_index(inplace=True, drop=True)
+        self.extra_signals=extra_signals
 
     def __len__(self):
         """
@@ -308,6 +310,11 @@ class PredictionDataGenerator(tf.keras.utils.Sequence):
         roi_size = roi_pool.shape[0]
 
         # With the files loaded get the data
+
+        self.extra_signals_streams = []
+        if self.extra_signals != None:
+            self.extra_signals_streams = load_multiple_bigwig(self.extra_signals)
+
         with load_bigwig(self.signal) as signal_stream, load_2bit(self.sequence) as sequence_stream:
             for row_idx in range(roi_size):
                 # Get the single row
@@ -320,7 +327,10 @@ class PredictionDataGenerator(tf.keras.utils.Sequence):
                                                 start=int(row.iloc[1]),
                                                 end=int(row.iloc[2]),
                                                 use_complement=self.use_complement,
-                                                reverse_matrix=self.use_complement)
+                                                reverse_matrix=self.use_complement,
+                                                rows=INPUT_CHANNELS + len(self.extra_signals_streams),
+                                                extra_signals_streams=self.extra_signals_streams
+                                                )
 
                 # Append the matrix of values to the batch list
                 inputs_batch.append(input_matrix)
@@ -337,7 +347,9 @@ def make_stranded_predictions(roi_pool: pd.DataFrame,
                               chromosome: str,
                               number_intervals: int = 32,
                               input_channels: int = INPUT_CHANNELS,
-                              input_length: int = INPUT_LENGTH):
+                              input_length: int = INPUT_LENGTH,
+                              extra_signals=None
+                              ):
     chr_roi_pool = roi_pool[roi_pool["chr"] == chromosome].copy()
 
     logging.info("Load pre-trained model")
@@ -352,7 +364,9 @@ def make_stranded_predictions(roi_pool: pd.DataFrame,
                                              input_length=input_length,
                                              predict_roi_df=chr_roi_pool,
                                              batch_size=batch_size,
-                                             use_complement=use_complement)
+                                             use_complement=use_complement,
+                                             extra_signals=extra_signals
+                                             )
 
     logging.info("Making predictions")
 

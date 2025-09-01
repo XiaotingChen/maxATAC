@@ -12,11 +12,11 @@ from multiprocessing import Pool, Manager
 from maxatac.utilities.system_tools import get_dir, Mute
 
 with Mute():
-    from maxatac.utilities.genome_tools import build_chrom_sizes_dict
+    from maxatac.utilities.genome_tools import build_chrom_sizes_dict,load_multiple_bigwig
     from maxatac.utilities.peak_tools import get_threshold
     from maxatac.utilities.prediction_tools import write_predictions_to_bigwig, \
         create_prediction_regions, make_stranded_predictions
-
+from maxatac.utilities.constants import INPUT_LENGTH, INPUT_CHANNELS,OUTPUT_LENGTH
 
 def run_prediction(args):
     """
@@ -64,6 +64,11 @@ def run_prediction(args):
         from maxatac.utilities.constants import AUTOSOMAL_CHRS as all_chr
         args.chromosomes = all_chr
 
+    # Handle extra signals if available
+    extra_signals = None
+    if args.extra_signals!=None:
+        extra_signals = args.extra_signals.split(",")
+
     # Create the output directory set by the parser
     logging.debug(f"Make output directory: {args.output_directory}")
     output_directory = get_dir(args.output_directory)
@@ -95,22 +100,34 @@ def run_prediction(args):
                  f"Target signal: {args.signal} \n" +
                  f"Sequence data: {args.sequence} \n" +
                  f"Model: {args.model} \n" +
-                 "Chromosome requested: \n   - " + "\n    -".join(args.chromosomes) + "\n" +
-                 "Chromosomes in final prediction set: \n   - " + "\n    -".join(chrom_list) + "\n" +
+                 "Chromosome requested: \n   - " + "\n    - ".join(args.chromosomes) + "\n" +
+                 "Chromosomes in final prediction set: \n   - " + "\n    - ".join(chrom_list) + "\n" +
                  f"Output directory: {output_directory} \n" +
                  f"Batch Size: {args.batch_size} \n" +
-                 f"Output filename: {outfile_name_bigwig}"
+                 f"Output filename: {outfile_name_bigwig} \n" +
+                 "Extra signals: \n   - " + "\n    - ".join(extra_signals) + "\n"
                  )
 
     with Pool(args.threads) as p:
-        forward_strand_predictions = p.starmap(make_stranded_predictions,
-                                               [(regions_pool,
-                                                 args.signal,
-                                                 args.sequence,
-                                                 args.model,
-                                                 args.batch_size,
-                                                 False,
-                                                 chromosome) for chromosome in chrom_list])
+        forward_strand_predictions = p.starmap(
+            make_stranded_predictions,
+            [
+               (
+                regions_pool,
+                args.signal,
+                args.sequence,
+                args.model,
+                args.batch_size,
+                False,
+                chromosome,
+                OUTPUT_LENGTH,
+                INPUT_CHANNELS,
+                INPUT_LENGTH,
+                extra_signals,
+                )
+                for chromosome in chrom_list
+            ]
+        )
 
     # Write the predictions to a bigwig file and add name to args
     prediction_bedgraph = pd.concat(forward_strand_predictions)

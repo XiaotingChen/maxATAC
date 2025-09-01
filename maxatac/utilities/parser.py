@@ -336,6 +336,15 @@ def get_parser():
                               default=24,
                               help="Number of processes to run prediction in parallel. Default: 24"
                               )
+
+    predict_parser.add_argument("--extra_signals",
+                              dest="extra_signals",
+                              type=str,
+                              required=False,
+                              default=None,
+                              help="String for extra signals in the bw format, separated by comma"
+                              )
+
     #############################################
     # Train parser
     #############################################
