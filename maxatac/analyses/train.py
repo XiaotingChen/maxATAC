@@ -48,6 +48,7 @@ with Mute():
     from maxatac.utilities.genome_tools import (
         build_chrom_sizes_dict,
     )
+    from maxatac.utilities.constants import DEFAULT_TRAIN_BATCHES_PER_EPOCH
 
 
 def run_training(args):
@@ -161,6 +162,7 @@ def run_training(args):
             ].shape[0]
             // np.ceil((args.batch_size / (1.0 + float(args.ATAC_SAMPLING_MULTIPLIER))))
         )
+        train_steps_per_epoch_v2 = DEFAULT_TRAIN_BATCHES_PER_EPOCH  #
         valid_steps_per_epoch_v2 = int(
             validate_examples.ROI_pool.shape[0] // args.batch_size
         )
@@ -215,10 +217,11 @@ def run_training(args):
     # chip first to avoid positive sample truncation
 
     # re-assign train_steps_per_epoch_v2 here
-    train_steps_per_epoch_v2 = int(
-        train_data_chip.cardinality().numpy()
-        // np.ceil((args.batch_size / (1.0 + float(args.ATAC_SAMPLING_MULTIPLIER))))
-    )
+    # train_steps_per_epoch_v2 = int(
+    #     train_data_chip.cardinality().numpy()
+    #     // np.ceil((args.batch_size / (1.0 + float(args.ATAC_SAMPLING_MULTIPLIER))))
+    # )
+    #train_steps_per_epoch_v2 = DEFAULT_TRAIN_BATCHES_PER_EPOCH #
     _chip_prob = 1.0 / (1.0 + float(args.ATAC_SAMPLING_MULTIPLIER))
     _atac_prob = 1.0 - _chip_prob
 
