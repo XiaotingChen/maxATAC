@@ -222,7 +222,9 @@ def run_training(args):
     #     // np.ceil((args.batch_size / (1.0 + float(args.ATAC_SAMPLING_MULTIPLIER))))
     # )
     #train_steps_per_epoch_v2 = DEFAULT_TRAIN_BATCHES_PER_EPOCH #
-    _chip_prob = 1.0 / (1.0 + float(args.ATAC_SAMPLING_MULTIPLIER))
+    _chip_prob = (
+                    train_data_atac.cardinality().numpy()//len(maxatac_model.cell_types)
+                 )   /   ( (train_data_atac.cardinality().numpy()//len(maxatac_model.cell_types))  + train_data_atac.cardinality().numpy() )
     _atac_prob = 1.0 - _chip_prob
 
     repeat_scale = 1
