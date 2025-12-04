@@ -1974,162 +1974,162 @@ def generate_tfds_files(
             data_path,
         ]
 
-        print("Getting train ATAC-seq in " + cell_type)
-        data = tf.data.Dataset.from_generator(
-            DataGen(
-                sequence=args.sequence,
-                meta_table=maxatac_model.meta_dataframe,
-                roi_pool=train_examples.ROI_pool_ATAC[
-                    train_examples.ROI_pool_ATAC["Cell_Line"] == cell_type
-                ],
-                chip=False,
-                cell_type=None,
-                atac_sampling_multiplier=args.ATAC_SAMPLING_MULTIPLIER,
-                chip_sample_weight_baseline=args.CHIP_SAMPLE_WEIGHT_BASELINE,
-                batch_size=args.batch_size,
-                shuffle=False,
-                chr_limit=chr_limit,
-                flanking_padding_size=args.FLANKING_SIZE,
-                extra_signals_channels=maxatac_model.extra_signals_channels,
-            ),
-            output_signature=(
-                tf.TensorSpec(
-                    shape=(
-                        INPUT_LENGTH + 2 * args.FLANKING_SIZE,
-                        INPUT_CHANNELS + maxatac_model.extra_signals_channels,
-                    ),
-                    dtype=tf.float32,
-                ),
-                tf.TensorSpec(
-                    shape=(
-                        OUTPUT_LENGTH
-                        + int(np.ceil(args.FLANKING_SIZE * 2 / BP_RESOLUTION))
-                    ),
-                    dtype=tf.float32,
-                ),
-                tf.TensorSpec(shape=(), dtype=tf.float32),
-            ),
-        )
-        data_path = "{}/{}/{}_{}_{}".format(
-            args.TFDS_PATH, "train", transcription_factor, cell_type, "ATAC"
-        )
-        data.save(
-            path=data_path,
-            compression="GZIP",
-        )
-        data_meta.loc[data_meta.shape[0]] = [
-            "train",
-            transcription_factor,
-            cell_type,
-            "ATAC",
-            data_path,
-        ]
-
-        print("Getting valid CHIP-seq in " + cell_type)
-        data = tf.data.Dataset.from_generator(
-            DataGen(
-                sequence=args.sequence,
-                meta_table=maxatac_model.meta_dataframe,
-                roi_pool=validate_examples.ROI_pool_CHIP[
-                    validate_examples.ROI_pool_CHIP["Cell_Line"] == cell_type
-                ],
-                chip=True,
-                cell_type=None,
-                atac_sampling_multiplier=args.ATAC_SAMPLING_MULTIPLIER,
-                chip_sample_weight_baseline=args.CHIP_SAMPLE_WEIGHT_BASELINE,
-                batch_size=args.batch_size,
-                shuffle=False,
-                chr_limit=chr_limit,
-                flanking_padding_size=args.FLANKING_SIZE,
-                override_shrinkage_factor=True,
-                suppress_cell_type_TN_weight=model_config[
-                    "SUPPRESS_CELL_TYPE_SPECIFIC_TN_WEIGHTS"
-                ],
-                extra_signals_channels=maxatac_model.extra_signals_channels,
-            ),
-            output_signature=(
-                tf.TensorSpec(
-                    shape=(
-                        INPUT_LENGTH + 2 * args.FLANKING_SIZE,
-                        INPUT_CHANNELS + maxatac_model.extra_signals_channels,
-                    ),
-                    dtype=tf.float32,
-                ),
-                tf.TensorSpec(
-                    shape=(
-                        OUTPUT_LENGTH
-                        + int(np.ceil(args.FLANKING_SIZE * 2 / BP_RESOLUTION))
-                    ),
-                    dtype=tf.float32,
-                ),
-                tf.TensorSpec(shape=(), dtype=tf.float32),
-            ),
-        )
-        data_path = "{}/{}/{}_{}_{}".format(
-            args.TFDS_PATH, "valid", transcription_factor, cell_type, "CHIP"
-        )
-        data.save(
-            path=data_path,
-            compression="GZIP",
-        )
-        data_meta.loc[data_meta.shape[0]] = [
-            "valid",
-            transcription_factor,
-            cell_type,
-            "CHIP",
-            data_path,
-        ]
-
-        print("Getting valid ATAC-seq in " + cell_type)
-        data = tf.data.Dataset.from_generator(
-            DataGen(
-                sequence=args.sequence,
-                meta_table=maxatac_model.meta_dataframe,
-                roi_pool=validate_examples.ROI_pool_ATAC[
-                    validate_examples.ROI_pool_ATAC["Cell_Line"] == cell_type
-                ],
-                chip=False,
-                cell_type=None,
-                atac_sampling_multiplier=args.ATAC_SAMPLING_MULTIPLIER,
-                chip_sample_weight_baseline=args.CHIP_SAMPLE_WEIGHT_BASELINE,
-                batch_size=args.batch_size,
-                shuffle=False,
-                chr_limit=chr_limit,
-                flanking_padding_size=args.FLANKING_SIZE,
-                extra_signals_channels=maxatac_model.extra_signals_channels,
-            ),
-            output_signature=(
-                tf.TensorSpec(
-                    shape=(
-                        INPUT_LENGTH + 2 * args.FLANKING_SIZE,
-                        INPUT_CHANNELS + maxatac_model.extra_signals_channels,
-                    ),
-                    dtype=tf.float32,
-                ),
-                tf.TensorSpec(
-                    shape=(
-                        OUTPUT_LENGTH
-                        + int(np.ceil(args.FLANKING_SIZE * 2 / BP_RESOLUTION))
-                    ),
-                    dtype=tf.float32,
-                ),
-                tf.TensorSpec(shape=(), dtype=tf.float32),
-            ),
-        )
-        data_path = "{}/{}/{}_{}_{}".format(
-            args.TFDS_PATH, "valid", transcription_factor, cell_type, "ATAC"
-        )
-        data.save(
-            path=data_path,
-            compression="GZIP",
-        )
-        data_meta.loc[data_meta.shape[0]] = [
-            "valid",
-            transcription_factor,
-            cell_type,
-            "ATAC",
-            data_path,
-        ]
+        # print("Getting train ATAC-seq in " + cell_type)
+        # data = tf.data.Dataset.from_generator(
+        #     DataGen(
+        #         sequence=args.sequence,
+        #         meta_table=maxatac_model.meta_dataframe,
+        #         roi_pool=train_examples.ROI_pool_ATAC[
+        #             train_examples.ROI_pool_ATAC["Cell_Line"] == cell_type
+        #         ],
+        #         chip=False,
+        #         cell_type=None,
+        #         atac_sampling_multiplier=args.ATAC_SAMPLING_MULTIPLIER,
+        #         chip_sample_weight_baseline=args.CHIP_SAMPLE_WEIGHT_BASELINE,
+        #         batch_size=args.batch_size,
+        #         shuffle=False,
+        #         chr_limit=chr_limit,
+        #         flanking_padding_size=args.FLANKING_SIZE,
+        #         extra_signals_channels=maxatac_model.extra_signals_channels,
+        #     ),
+        #     output_signature=(
+        #         tf.TensorSpec(
+        #             shape=(
+        #                 INPUT_LENGTH + 2 * args.FLANKING_SIZE,
+        #                 INPUT_CHANNELS + maxatac_model.extra_signals_channels,
+        #             ),
+        #             dtype=tf.float32,
+        #         ),
+        #         tf.TensorSpec(
+        #             shape=(
+        #                 OUTPUT_LENGTH
+        #                 + int(np.ceil(args.FLANKING_SIZE * 2 / BP_RESOLUTION))
+        #             ),
+        #             dtype=tf.float32,
+        #         ),
+        #         tf.TensorSpec(shape=(), dtype=tf.float32),
+        #     ),
+        # )
+        # data_path = "{}/{}/{}_{}_{}".format(
+        #     args.TFDS_PATH, "train", transcription_factor, cell_type, "ATAC"
+        # )
+        # data.save(
+        #     path=data_path,
+        #     compression="GZIP",
+        # )
+        # data_meta.loc[data_meta.shape[0]] = [
+        #     "train",
+        #     transcription_factor,
+        #     cell_type,
+        #     "ATAC",
+        #     data_path,
+        # ]
+        #
+        # print("Getting valid CHIP-seq in " + cell_type)
+        # data = tf.data.Dataset.from_generator(
+        #     DataGen(
+        #         sequence=args.sequence,
+        #         meta_table=maxatac_model.meta_dataframe,
+        #         roi_pool=validate_examples.ROI_pool_CHIP[
+        #             validate_examples.ROI_pool_CHIP["Cell_Line"] == cell_type
+        #         ],
+        #         chip=True,
+        #         cell_type=None,
+        #         atac_sampling_multiplier=args.ATAC_SAMPLING_MULTIPLIER,
+        #         chip_sample_weight_baseline=args.CHIP_SAMPLE_WEIGHT_BASELINE,
+        #         batch_size=args.batch_size,
+        #         shuffle=False,
+        #         chr_limit=chr_limit,
+        #         flanking_padding_size=args.FLANKING_SIZE,
+        #         override_shrinkage_factor=True,
+        #         suppress_cell_type_TN_weight=model_config[
+        #             "SUPPRESS_CELL_TYPE_SPECIFIC_TN_WEIGHTS"
+        #         ],
+        #         extra_signals_channels=maxatac_model.extra_signals_channels,
+        #     ),
+        #     output_signature=(
+        #         tf.TensorSpec(
+        #             shape=(
+        #                 INPUT_LENGTH + 2 * args.FLANKING_SIZE,
+        #                 INPUT_CHANNELS + maxatac_model.extra_signals_channels,
+        #             ),
+        #             dtype=tf.float32,
+        #         ),
+        #         tf.TensorSpec(
+        #             shape=(
+        #                 OUTPUT_LENGTH
+        #                 + int(np.ceil(args.FLANKING_SIZE * 2 / BP_RESOLUTION))
+        #             ),
+        #             dtype=tf.float32,
+        #         ),
+        #         tf.TensorSpec(shape=(), dtype=tf.float32),
+        #     ),
+        # )
+        # data_path = "{}/{}/{}_{}_{}".format(
+        #     args.TFDS_PATH, "valid", transcription_factor, cell_type, "CHIP"
+        # )
+        # data.save(
+        #     path=data_path,
+        #     compression="GZIP",
+        # )
+        # data_meta.loc[data_meta.shape[0]] = [
+        #     "valid",
+        #     transcription_factor,
+        #     cell_type,
+        #     "CHIP",
+        #     data_path,
+        # ]
+        #
+        # print("Getting valid ATAC-seq in " + cell_type)
+        # data = tf.data.Dataset.from_generator(
+        #     DataGen(
+        #         sequence=args.sequence,
+        #         meta_table=maxatac_model.meta_dataframe,
+        #         roi_pool=validate_examples.ROI_pool_ATAC[
+        #             validate_examples.ROI_pool_ATAC["Cell_Line"] == cell_type
+        #         ],
+        #         chip=False,
+        #         cell_type=None,
+        #         atac_sampling_multiplier=args.ATAC_SAMPLING_MULTIPLIER,
+        #         chip_sample_weight_baseline=args.CHIP_SAMPLE_WEIGHT_BASELINE,
+        #         batch_size=args.batch_size,
+        #         shuffle=False,
+        #         chr_limit=chr_limit,
+        #         flanking_padding_size=args.FLANKING_SIZE,
+        #         extra_signals_channels=maxatac_model.extra_signals_channels,
+        #     ),
+        #     output_signature=(
+        #         tf.TensorSpec(
+        #             shape=(
+        #                 INPUT_LENGTH + 2 * args.FLANKING_SIZE,
+        #                 INPUT_CHANNELS + maxatac_model.extra_signals_channels,
+        #             ),
+        #             dtype=tf.float32,
+        #         ),
+        #         tf.TensorSpec(
+        #             shape=(
+        #                 OUTPUT_LENGTH
+        #                 + int(np.ceil(args.FLANKING_SIZE * 2 / BP_RESOLUTION))
+        #             ),
+        #             dtype=tf.float32,
+        #         ),
+        #         tf.TensorSpec(shape=(), dtype=tf.float32),
+        #     ),
+        # )
+        # data_path = "{}/{}/{}_{}_{}".format(
+        #     args.TFDS_PATH, "valid", transcription_factor, cell_type, "ATAC"
+        # )
+        # data.save(
+        #     path=data_path,
+        #     compression="GZIP",
+        # )
+        # data_meta.loc[data_meta.shape[0]] = [
+        #     "valid",
+        #     transcription_factor,
+        #     cell_type,
+        #     "ATAC",
+        #     data_path,
+        # ]
 
         return data_meta
 
